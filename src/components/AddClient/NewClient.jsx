@@ -1,10 +1,22 @@
 import React, { useState } from 'react';
 import { FaBell, FaDollarSign, FaLanguage, FaPaperclip, FaChevronRight } from 'react-icons/fa';
-import InvoiceAttachment from './InvoiceAttachment';
+import InvoiceAttachments from './InvoiceAttachments';
+import SendRemindersModal from './SendRemindersModal';
+import CurrencyLanguageModal from './CurrencyLanguageModal';
+import ChargeLateFeesModal from './ChargeLateFeesModal';
 
 const NewClientForm = () => {
-    const [showInvoiceAttachment, setShowInvoiceAttachment] = useState(false);
-    const toggleInvoiceAttachment = () => setShowInvoiceAttachment (!showInvoiceAttachment);
+    const [showInvoiceAttachments, setShowInvoiceAttachments] = useState(false);
+    const [showSendReminders, setShowSendReminders] = useState(false);
+    const [showCurrencyLanguage, setShowCurrencyLanguage] = useState(false);
+    const [showChargeLateFees, setShowChargeLateFees] = useState(false);
+
+    const handleCloseAllModals = () => {
+        setShowInvoiceAttachments(false);
+        setShowSendReminders(false);
+        setShowCurrencyLanguage(false);
+        setShowChargeLateFees(false);
+    };
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white shadow-md rounded-lg">
@@ -85,57 +97,67 @@ const NewClientForm = () => {
         <div className="bg-gray-50 p-4 rounded-lg shadow-md">
           <h2 className="text-lg font-semibold mb-2">Client Settings</h2>
           <ul className="space-y-2">
-            <li className="flex justify-between items-center py-2 border-b border-gray-200">
+            <li
+              className="flex justify-between items-center py-2 border-b border-gray-200 cursor-pointer"
+              onClick={() => setShowSendReminders(true)}
+            >
               <div className="flex items-center space-x-2">
                 <FaBell className="text-gray-600" />
                 <span>Send Reminders</span>
               </div>
-              <button className="flex items-center text-gray-600 hover:text-gray-800">
+              <div className="flex items-center space-x-2">
                 <span>No</span>
-                <FaChevronRight className="ml-2" />
-              </button>
+                <FaChevronRight className="text-gray-600" />
+              </div>
             </li>
-            <li className="flex justify-between items-center py-2 border-b border-gray-200">
+            <li
+              className="flex justify-between items-center py-2 border-b border-gray-200 cursor-pointer"
+              onClick={() => setShowChargeLateFees(true)}
+            >
               <div className="flex items-center space-x-2">
                 <FaDollarSign className="text-gray-600" />
                 <span>Charge Late Fees</span>
               </div>
-              <button className="flex items-center text-gray-600 hover:text-gray-800">
+              <div className="flex items-center space-x-2">
                 <span>No</span>
-                <FaChevronRight className="ml-2" />
-              </button>
+                <FaChevronRight className="text-gray-600" />
+              </div>
             </li>
-            <li className="flex justify-between items-center py-2 border-b border-gray-200">
+            <li
+              className="flex justify-between items-center py-2 border-b border-gray-200 cursor-pointer"
+              onClick={() => setShowCurrencyLanguage(true)}
+            >
               <div className="flex items-center space-x-2">
                 <FaLanguage className="text-gray-600" />
                 <span>Currency & Language</span>
               </div>
-              <button className="flex items-center text-gray-600 hover:text-gray-800">
+              <div className="flex items-center space-x-2">
                 <span>USD, English</span>
-                <FaChevronRight className="ml-2" />
-              </button>
+                <FaChevronRight className="text-gray-600" />
+              </div>
             </li>
-            <li className="flex justify-between items-center py-2 border-b border-gray-200">
+            <li
+              className="flex justify-between items-center py-2 border-b border-gray-200 cursor-pointer"
+              onClick={() => setShowInvoiceAttachments(true)}
+            >
               <div className="flex items-center space-x-2">
                 <FaPaperclip className="text-gray-600" />
                 <span>Invoice Attachments</span>
               </div>
-              <button className="flex items-center text-gray-600 hover:text-gray-800">
+              <div className="flex items-center space-x-2">
                 <span>No</span>
-                <FaChevronRight className="ml-2" />
-              </button>
+                <FaChevronRight className="text-gray-600" />
+              </div>
             </li>
           </ul>
-          {/* Render Invoice Attachments when clicked */}
-          {showInvoiceAttachment && <InvoiceAttachment onClose={toggleInvoiceAttachment} />}
         </div>
       </form>
 
-      {/* Action Buttons */}
-      <div className="flex justify-end mt-4 space-x-4">
-        <button className="bg-red-500 text-white py-2 px-4 rounded">Cancel</button>
-        <button className="bg-green-500 text-white py-2 px-4 rounded">Save</button>
-      </div>
+      {/* Modals */}
+      {showSendReminders && <SendRemindersModal onClose={handleCloseAllModals} />}
+      {showCurrencyLanguage && <CurrencyLanguageModal onClose={handleCloseAllModals} />}
+      {showChargeLateFees && <ChargeLateFeesModal onClose={handleCloseAllModals} />}
+      {showInvoiceAttachments && <InvoiceAttachments onClose={handleCloseAllModals} />}
     </div>
   );
 };
