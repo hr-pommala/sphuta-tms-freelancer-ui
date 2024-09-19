@@ -6,6 +6,7 @@ import PaymentModal from './PaymentModal';
 import MakeRecurringModal from './MakeRecurringModal';
 import AddLineItem from './AddLineItem';
 import SendEmailPopup from './SendEmailPopup';
+import { FaCreditCard, FaPalette, FaSyncAlt, FaChevronRight } from 'react-icons/fa'; // Icons
 
 
 function NewInvoice(){
@@ -116,12 +117,38 @@ function NewInvoice(){
                             </div>
                         </div>
                     </div>
+
                     <div className="grid sm:col-span-3 grid-rows-5 grid-flow-col">
-                        <h1 className="text-xl text-left font-bold">Setting For this invoices</h1>
-                        <div className="grid grid-rows-subgrid row-span-3">
-                            <div className="row-start-1 text-left"><p onClick={openModal}>Accept Online Payments &gt;</p> <PaymentIcons /><hr className="my-4 border-t" /> </div>
-                            <div className="row-start-2 text-left"><PaintIcon /><hr className="my-4 border-t" /></div>
-                            <div className="row-start-3 text-left"><RedoIcons /><p onClick={openMakeRecurringModal}>Make Recurring &gt; </p><hr className="my-4 border-t" /></div>
+                        {/* Settings For This Invoice */}
+                        <div className="mt-4 space-y-4">
+                          <h2 className="text-xl font-semibold">Settings For This Invoice</h2>
+
+                          {/* Settings options with icons and '>' caret */}
+                          <div className="space-y-4">
+                            <div className="flex justify-between items-center border-b pb-2">
+                              <div className="flex items-center">
+                                <FaCreditCard className="text-blue-500 w-6 h-6 mr-2" />
+                                <span className="font-medium">Accept Online Payments: <span className="text-red-500">NO</span></span>
+                              </div>
+                              <FaChevronRight className="text-gray-500" onClick={openModal} />
+                            </div>
+
+                            <div className="flex justify-between items-center border-b pb-2">
+                              <div className="flex items-center">
+                                <FaPalette className="text-blue-500 w-6 h-6 mr-2" />
+                                <span className="font-medium">Customize Invoice Style</span>
+                              </div>
+                              <FaChevronRight className="text-gray-500" />
+                            </div>
+
+                            <div className="flex justify-between items-center border-b pb-2">
+                              <div className="flex items-center">
+                                <FaSyncAlt className="text-blue-500 w-6 h-6 mr-2" />
+                                <span className="font-medium">Make Recurring</span>
+                              </div>
+                              <FaChevronRight className="text-gray-500" onClick={openMakeRecurringModal} />
+                            </div>
+                          </div>
                         </div>
                     </div>
                     <PaymentModal isOpen={isModalOpen} onRequestClose={closeModal} />

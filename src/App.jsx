@@ -1,6 +1,4 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
 import React from 'react';
 import './index.css';
@@ -8,6 +6,8 @@ import InvoiceForm from './components/NewInvoice/InvoiceForm';
 import NewClient from './components/AddClient/NewClient';
 import TimeTracking from './components/TimeTrack/TimeTracking';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+
+import Invoice from './components/Invoice';
 
 function App() {
 
@@ -23,8 +23,9 @@ function App() {
                   {/* Route to display the New Form */}
                   <Route path="/new-form" element={<InvoiceForm />} />
 
-                  {/* Route to display the New Form */}
+                  {/* Route to display the Time Tracking */}
                   <Route path="/time-track" element={<TimeTracking />} />
+
 
                   {/* Default route to redirect or show a message */}
                   <Route
