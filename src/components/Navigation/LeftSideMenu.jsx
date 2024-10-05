@@ -3,9 +3,15 @@ import React, { useState } from 'react';
 const LeftSideMenu = () => {
   // Sample JSON data
   const [menuData, setMenuData] = useState({
-    "Product": ["Payroll", "Book Keeping", "Time Tracking"],
-    "Features": ["Invoice", "Track Expense", "Manage Bills"]
+    "Dashboards": ["Home", "Planner"],
+    "Sales": ["Overview", "All Sales", "Invoices","Estimates","Sales Orders","Customers","Product & Services"],
+    "Expenses": ["Expenses", "Bills", "Vendor","Contractors","Mileage","1099 Filings"],
+    "Customers & Leads": ["Overview", "Customers", "Marketing"],
+    "Payroll": ["Employees", "Contractors", "Vendor","Worker's Comp"],
+    "Time": ["Overview", "Time Entries"],
+    "Budget": []
   });
+
 
   // State to track which key is hovered
   const [hoveredKey, setHoveredKey] = useState(null);
