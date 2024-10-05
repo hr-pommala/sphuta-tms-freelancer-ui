@@ -5,9 +5,10 @@ import './index.css';
 import InvoiceForm from './components/NewInvoice/InvoiceForm';
 import NewClient from './components/AddClient/NewClient';
 import TimeTracking from './components/TimeTrack/TimeTracking';
+import LeftSideMenu from './components/Navigation/LeftSideMenu';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
-import Invoice from './components/Invoice';
+//import Invoice from './components/Invoice';
 
 function App() {
 
@@ -26,6 +27,8 @@ function App() {
                   {/* Route to display the Time Tracking */}
                   <Route path="/time-track" element={<TimeTracking />} />
 
+                   {/* Route to display the Time Tracking */}
+                  <Route path="/leftSide-menu" element={<LeftSideMenu />} />
 
                   {/* Default route to redirect or show a message */}
                   <Route
