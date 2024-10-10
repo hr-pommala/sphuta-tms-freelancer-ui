@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
 
 const LeftSideMenu = () => {
+
+  // State to track the visibility of the sidebar
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // State to track the selected content
+  const [selectedPage, setSelectedPage] = useState('Dashboard');
+
   // Sample JSON data
   const [menuData, setMenuData] = useState({
     "Dashboards": ["Home", "Planner"],
