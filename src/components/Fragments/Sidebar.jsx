@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FaTachometerAlt, FaChartLine, FaMoneyBillWave, FaUsers, FaDollarSign, FaClock, FaCalculator } from 'react-icons/fa'; // Importing icons
+import { FaTachometerAlt, FaChartLine, FaMoneyBillWave, FaUsers, FaDollarSign, FaClock, FaCalculator, FaChevronRight, FaChevronDown } from 'react-icons/fa'; // Importing icons
 
 const Sidebar = ({ menuData, onSubMenuClick }) => {
   // State to track which main menu item is expanded
@@ -39,7 +39,13 @@ const Sidebar = ({ menuData, onSubMenuClick }) => {
                 {key}
               </div>
               {/* Arrow indicator */}
-              <span>{expandedMenu === key ? '▼' : '▶'}</span>
+              <span></span>
+                  {expandedMenu === key ? (
+                  <FaChevronDown className="text-gray-500" />
+                  ) :
+                  (
+                      <FaChevronRight className="text-gray-500" />
+                      )}
             </div>
 
             {/* Submenu - displayed only if the parent menu is clicked */}
