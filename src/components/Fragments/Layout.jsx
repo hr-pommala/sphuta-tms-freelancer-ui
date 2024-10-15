@@ -39,15 +39,11 @@ const Layout = () => {
       )}
 
       {/* Main Content */}
-      <div className="flex-1 bg-gray-100">
+      <div className="flex-1 overflow-auto bg-gray-100">
         {/* Header */}
         <Header toggleSidebar={toggleSidebar} />
 
-        {/* Content Area */}
-        <div className="flex-1 overflow-auto bg-gray-100">
-          {/* The content will adjust based on the selected page */}
-          <Content selectedPage={selectedPage} />
-        </div>
+       <Content selectedPage={selectedPage} />
       </div>
     </div>
   );

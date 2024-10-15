@@ -16,32 +16,28 @@ function App() {
   return (
 
       <Router>
-            <div className="App p-6 bg-gray-100 min-h-screen">
-              <div className="max-w-6xl mx-auto">
-                <Routes>
-                  {/* Route to display the New Client Form */}
-                  <Route path="/new-client" element={<NewClient />} />
+            <Routes>
+              {/* Route to display the New Client Form */}
+              <Route path="/new-client" element={<NewClient />} />
 
-                  {/* Route to display the New Form */}
-                  <Route path="/new-form" element={<InvoiceForm />} />
+              {/* Route to display the New Form */}
+              <Route path="/new-form" element={<InvoiceForm />} />
 
-                  {/* Route to display the Time Tracking */}
-                  <Route path="/time-track" element={<TimeTracking />} />
+              {/* Route to display the Time Tracking */}
+              <Route path="/time-track" element={<TimeTracking />} />
 
-                   {/* Route to display the Left side menu */}
-                  <Route path="/leftSide-menu" element={<LeftSideMenu />} />
+               {/* Route to display the Left side menu */}
+              <Route path="/leftSide-menu" element={<LeftSideMenu />} />
 
-                  {/* Route to display the Layout */}
-                  <Route path="/layout-form" element={<Layout />} />
+              {/* Route to display the Layout */}
+              <Route path="/layout-form" element={<Layout />} />
 
-                  {/* Default route to redirect or show a message */}
-                  <Route
-                    path="*"
-                    element={<h2 className="text-center mt-10">Select a form from the URL</h2>}
-                  />
-                </Routes>
-              </div>
-            </div>
+              {/* Default route to redirect or show a message */}
+              <Route
+                path="*"
+                element={<h2 className="text-center mt-10">Select a form from the URL</h2>}
+              />
+            </Routes>
           </Router>
 
   )
