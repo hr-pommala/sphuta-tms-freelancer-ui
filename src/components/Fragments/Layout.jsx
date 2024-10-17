@@ -21,6 +21,9 @@ const Layout = () => {
     "Budget": []
   };
 
+  //JSON section 3 menu data
+  const dynamicMenus = ['App', 'Team Members', 'Items and services', 'Bank Connections', 'Settings'];
+
   // Toggle sidebar visibility
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -35,7 +38,13 @@ const Layout = () => {
     <div className="flex h-screen">
       {/* Sidebar */}
       {sidebarOpen && (
-        <Sidebar menuData={menuData} onSubMenuClick={handleSubMenuClick} />
+        <Sidebar
+            menuData={menuData}
+            dynamicMenus={dynamicMenus}
+            onSubMenuClick={handleSubMenuClick}
+            userName="Sandeepkumar E"
+            logoUrl="../assets/react.svg"
+          />
       )}
 
       {/* Main Content */}

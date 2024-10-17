@@ -45,6 +45,16 @@ const Content = ({ selectedPage }) => {
           return renderPage('Workers Comp Page','This is the Workers Comp content.');
       case 'Time Entries':
           return <TimeTracking />;
+      case 'App':
+          return renderPage('App','This is the App content.');
+      case 'Team Members':
+          return renderPage('Team Members','This is the Team Members page content.');
+      case 'Items and services':
+          return renderPage('Items and services','This is the Items and services content.');
+      case 'Bank Connections':
+          return renderPage('Bank Connections','This is the Bank Connections content.');
+      case 'Settings':
+          return renderPage('Settings','This is the Settings content.');
       default:
         return renderPage('Welcome!','Select an item from the menu to get started.');
     }
