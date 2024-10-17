@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FaTachometerAlt, FaChartLine, FaMoneyBillWave, FaUsers, FaDollarSign, FaClock, FaCalculator,
-    FaChevronRight, FaChevronDown, FaCogs, FaShoppingCart, FaUniversity, FaFileInvoice } from 'react-icons/fa'; // Importing icons
+    FaChevronRight, FaChevronDown, FaCogs, FaShoppingCart, FaUniversity, FaFileInvoice, FaCog } from 'react-icons/fa'; // Importing icons
 
 const Sidebar = ({ menuData, onSubMenuClick, userName, logoUrl }) => {
   // State to track which main menu item is expanded
@@ -28,7 +28,7 @@ const Sidebar = ({ menuData, onSubMenuClick, userName, logoUrl }) => {
     { name: 'Team Members', icon: <FaUsers /> },
     { name: 'Items and Services', icon: <FaShoppingCart /> },
     { name: 'Bank Connections', icon: <FaUniversity /> },
-    { name: 'Settings', icon: <FaFileInvoice /> }
+    { name: 'Settings', icon: <FaCog /> }
   ];
 
   return (
