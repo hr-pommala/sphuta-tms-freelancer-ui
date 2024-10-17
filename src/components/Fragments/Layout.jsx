@@ -43,7 +43,7 @@ const Layout = () => {
             dynamicMenus={dynamicMenus}
             onSubMenuClick={handleSubMenuClick}
             userName="Sandeepkumar E"
-            logoUrl="../assets/react.svg"
+            logoUrl="./src/assets/sphuta.png"
           />
       )}
 
