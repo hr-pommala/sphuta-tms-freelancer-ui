@@ -37,7 +37,7 @@ const Sidebar = ({ menuData, onSubMenuClick, userName, logoUrl }) => {
         <div className="p-4 border-b border-gray-600">
           <div className="flex items-center justify-start mb-4">
             <img src={logoUrl} alt="" className="w-12 h-12 mr-2" />
-            <span className="text-xl font-bold">{userName}</span>
+            <span className="text-xl font-bold">{userName ? userName : 'Guest User'}</span>
           </div>
         </div>
       {/* Section 2: Main Menus */}

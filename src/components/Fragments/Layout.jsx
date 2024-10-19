@@ -3,7 +3,7 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import Content from './Content';
 
-const Layout = () => {
+const Layout = ({ userName }) => {
   // State to track the visibility of the sidebar
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
@@ -42,7 +42,7 @@ const Layout = () => {
             menuData={menuData}
             dynamicMenus={dynamicMenus}
             onSubMenuClick={handleSubMenuClick}
-            userName="Sandeepkumar E"
+            userName={userName}
             logoUrl="./src/assets/sphuta.png"
           />
       )}
