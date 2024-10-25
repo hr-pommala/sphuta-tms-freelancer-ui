@@ -46,3 +46,8 @@
     --tw-bg-opacity: 1;
     background-color: rgb(4 53 120);
 }
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}

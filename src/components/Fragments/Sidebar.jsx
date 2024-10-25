@@ -11,6 +11,9 @@ const Sidebar = ({ menuData, onSubMenuClick, userName, logoUrl }) => {
     setExpandedMenu(expandedMenu === menuKey ? null : menuKey);
   };
 
+  const [isOpen, setIsOpen] = useState(true);
+  const toggleSidebar = () => setIsOpen(!isOpen);
+
   // Mapping main menu items to their respective icons
   const menuIcons = {
     "Dashboards": <FaTachometerAlt />,
@@ -32,16 +35,16 @@ const Sidebar = ({ menuData, onSubMenuClick, userName, logoUrl }) => {
   ];
 
   return (
-    <div className="w-64 bg-custom-blue text-white h-full flex flex-col justify-between overflow-auto">
+    <div className="{`fixed lg:relative ${isOpen ? 'w-64' : 'w-0 lg:w-64'} w-64 bg-custom-blue text-white h-full flex flex-col justify-between overflow-auto">
       {/* Section 1: Company Logo and User Name */}
-        <div className="p-4 border-b border-gray-600">
+        <div className="{`p-4 border-b border-gray-600 ${isOpen ? 'block' : 'hidden'}`}">
           <div className="flex items-center justify-start mb-4">
             <img src={logoUrl} alt="" className="w-12 h-12 mr-2" />
             <span className="text-xl font-bold">{userName ? userName : 'Guest User'}</span>
           </div>
         </div>
       {/* Section 2: Main Menus */}
-        <div className="flex-grow border-b border-gray-600">
+        <div className={`flex-grow border-b border-gray-600 ${isOpen ? 'block' : 'hidden'}`}>
             <ul>
                 {Object.keys(menuData).map((key) => (
                   <li key={key} className="mt-4">
@@ -86,7 +89,7 @@ const Sidebar = ({ menuData, onSubMenuClick, userName, logoUrl }) => {
             </ul>
         </div>
         {/* Section 3: Dynamic Menus (Settings and Apps) */}
-          <div className="p-4 border-b border-gray-600">
+          <div className={`p-4 border-t border-gray-600 ${isOpen ? 'block' : 'hidden'}`}>
             <h3 className="text-gray-400 font-semibold mb-2">Settings & Apps</h3>
             <ul>
               {dynamicMenus.map((menu, index) => (

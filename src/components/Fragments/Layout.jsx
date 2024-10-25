@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import Content from './Content';
+import Breadcrumbs from './Breadcrumbs';
 
 const Layout = ({ userName }) => {
   // State to track the visibility of the sidebar
@@ -9,6 +10,8 @@ const Layout = ({ userName }) => {
 
   // State to track the selected content
   const [selectedPage, setSelectedPage] = useState('Dashboard');
+
+  const [breadcrumbPath, setBreadcrumbPath] = useState([]); // Track breadcrumb path
 
   // JSON menu data
   const menuData = {
@@ -30,8 +33,12 @@ const Layout = ({ userName }) => {
   };
 
   // Handle submenu click to load content
-  const handleSubMenuClick = (page) => {
-    setSelectedPage(page);
+  const handleSubMenuClick = (menuName, parentName) => {
+    setSelectedPage(menuName);
+
+    // Update breadcrumb path based on menu selection
+    const newPath = parentName ? [parentName, menuName] : [menuName];
+    setBreadcrumbPath(newPath);
   };
 
   return (
@@ -41,7 +48,7 @@ const Layout = ({ userName }) => {
         <Sidebar
             menuData={menuData}
             dynamicMenus={dynamicMenus}
-            onSubMenuClick={handleSubMenuClick}
+            onSubMenuClick={(menu, parent) => handleSubMenuClick(menu, parent)}
             userName={userName}
             logoUrl="./src/assets/sphuta.png"
           />
@@ -51,8 +58,8 @@ const Layout = ({ userName }) => {
       <div className="flex-1 overflow-auto bg-gray-100">
         {/* Header */}
         <Header toggleSidebar={toggleSidebar} />
-
-       <Content selectedPage={selectedPage} />
+        <Breadcrumbs path={breadcrumbPath} /> {/* Display breadcrumbs */}
+        <Content selectedPage={selectedPage} />
       </div>
     </div>
   );
