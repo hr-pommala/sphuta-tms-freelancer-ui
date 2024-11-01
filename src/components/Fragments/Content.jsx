@@ -2,6 +2,7 @@ import React from 'react';
 import InvoiceForm from '../NewInvoice/InvoiceForm';
 import TimeTracking from '../TimeTrack/TimeTracking';
 import NewClient from '../AddClient/NewClient';
+import HorizontalMenu from './HorizontalMenu';
 
 const Content = ({ selectedPage }) => {
   // Conditionally render the content based on the selected page
@@ -12,7 +13,7 @@ const Content = ({ selectedPage }) => {
       case 'Planner':
         return <NewClient />;
       case 'Overview':
-        return renderPage('Overview Page','This is the Overview content.');
+        return <HorizontalMenu />; //renderPage('Overview Page','This is the Overview content.');
       case 'All Sales':
         return renderPage('All Sales Page','This is the All Sales content.');
       case 'Invoices':
