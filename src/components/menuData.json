@@ -1,0 +1,34 @@
+[
+  {
+    "label": "Home",
+    "component": "Home"
+  },
+  {
+    "label": "Services",
+    "component": "Services",
+    "submenu": [
+      {
+        "label": "Consulting",
+        "component": "Consulting",
+        "submenu": [
+          { "label": "Strategy", "component": "Strategy" },
+          { "label": "Operations", "component": "Operations" }
+        ]
+      },
+      { "label": "Development", "component": "Development" },
+      { "label": "Support", "component": "Support" }
+    ]
+  },
+  {
+    "label": "Features",
+    "component": "Features",
+    "submenu": [
+      { "label": "Core Accounting Functions", "component": "CAF" },
+      { "label": "Invoicing and Billing", "component": "IB" }
+    ]
+  },
+  {
+    "label": "Contact",
+    "component": "Contact"
+  }
+]
