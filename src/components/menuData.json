@@ -4,31 +4,49 @@
     "component": "Home"
   },
   {
-    "label": "Services",
-    "component": "Services",
-    "submenu": [
-      {
-        "label": "Consulting",
-        "component": "Consulting",
-        "submenu": [
-          { "label": "Strategy", "component": "Strategy" },
-          { "label": "Operations", "component": "Operations" }
-        ]
-      },
-      { "label": "Development", "component": "Development" },
-      { "label": "Support", "component": "Support" }
-    ]
-  },
-  {
     "label": "Features",
     "component": "Features",
     "submenu": [
       { "label": "Core Accounting Functions", "component": "CAF" },
-      { "label": "Invoicing and Billing", "component": "IB" }
+      { "label": "Invoicing and Billing", "component": "IB" },
+      { "label": "Tax Management", "component": "TM" },
+      { "label": "Financial Reporting", "component": "FR" },
+      { "label": "Payroll Management", "component": "PM" },
+      { "label": "Bank and Payment Integration", "component": "BPI" },
+      { "label": "Integrations", "component": "Integrations" },
+      { "label": "Bank Reconciliation", "component": "BR" },
+      { "label": "Payroll Management", "component": "PR" },
+      { "label": "HR Process Management", "component": "HRPS" },
+      { "label": "Expense Management", "component": "EMS" },
+      { "label": "Invoicing and Billing", "component": "IB" },
+      { "label": "Security and Compliance", "component": "SC" }
     ]
+  },
+  {
+    "label": "Products",
+    "component": "Products",
+    "submenu": [
+      { "label": "Accounting", "component": "AS" },
+      { "label": "Timesheet Management", "component": "TMS" },
+      { "label": "Billing System", "component": "BS" },
+      { "label": "Reporting", "component": "RS" },
+      { "label": "Payment Notification", "component": "PNS" },
+      { "label": "Invoicing", "component": "IGS" },
+      { "label": "Transaction Recording", "component": "TRS" },
+      { "label": "Automated Tax Filing", "component": "ATFS" },
+      { "label": "Payroll Processing", "component": "PPS" },
+      { "label": "HR Process Management", "component": "HRPS" },
+      { "label": "Expense Management ", "component": "EMS" }
+    ]
+  },
+  {
+    "label": "About Us",
+    "component": "About"
   },
   {
     "label": "Contact",
     "component": "Contact"
   }
 ]
+
+
