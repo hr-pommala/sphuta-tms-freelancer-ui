@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import menuData from "./menuData.json";
+import menuData from "../json/menuData.json";
 import logo from "../assets/logo.jpeg";
 
 const Header = () => {

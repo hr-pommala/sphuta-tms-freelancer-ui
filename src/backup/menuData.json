@@ -4,6 +4,22 @@
     "component": "Home"
   },
   {
+    "label": "Services",
+    "component": "Services",
+    "submenu": [
+      {
+        "label": "Consulting",
+        "component": "Consulting",
+        "submenu": [
+          { "label": "Strategy", "component": "Consulting" },
+          { "label": "Operations", "component": "Consulting" }
+        ]
+      },
+      { "label": "Development", "component": "Development" },
+      { "label": "Support", "component": "Support" }
+    ]
+  },
+  {
     "label": "Features",
     "component": "Features",
     "submenu": [
@@ -26,17 +42,15 @@
     "label": "Products",
     "component": "Products",
     "submenu": [
-      { "label": "Accounting", "component": "AS" },
+      { "label": "Accounting", "component": "Accounting" },
       { "label": "Timesheet Management", "component": "TMS" },
       { "label": "Billing System", "component": "BS" },
       { "label": "Reporting", "component": "RS" },
       { "label": "Payment Notification", "component": "PNS" },
-      { "label": "Invoicing", "component": "IGS" },
+      { "label": "Invoicing", "component": "Invoicing" },
       { "label": "Transaction Recording", "component": "TRS" },
       { "label": "Automated Tax Filing", "component": "ATFS" },
-      { "label": "Payroll Processing", "component": "PPS" },
-      { "label": "HR Process Management", "component": "HRPS" },
-      { "label": "Expense Management ", "component": "EMS" }
+      { "label": "HR & Payroll", "component": "HRP" }
     ]
   },
   {
@@ -44,8 +58,7 @@
     "component": "About"
   },
   {
-    "label": "Contact",
-    "component": "Contact"
+    "label": "Contact",    "component": "Contact"
   }
 ]
 
