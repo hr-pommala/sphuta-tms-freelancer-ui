@@ -1,43 +1,32 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Header from "./components/Header";
-import Footer from "./components/Footer";
-import Home from "./pages/Home";
-import Services from "./pages/Services";
-import Consulting from "./pages/Consulting";
-import Strategy from "./pages/Strategy";
-import Operations from "./pages/Operations";
-import Development from "./pages/Development";
-import Support from "./pages/Support";
-import Features from "./pages/Features";
-import Contact from "./pages/Contact";
+import Layout from "./fragments/Layout";
+import Dashboard from "./pages/Dashboard";
+import Users from "./pages/Users";
+import Settings from "./pages/Settings";
+import Messages from "./pages/Messages";
+import Overview from "./pages/Overview";
+import Analytics from "./pages/Analytics";
+import Reports from "./pages/Reports";
+import AddUser from "./pages/AddUser";
+import ManageUsers from "./pages/ManageUsers";
 
 const App = () => {
   return (
     <Router>
-      <div className="flex flex-col h-screen">
-        {/* Header */}
-        <Header />
-
-        {/* Main Content */}
-        <div className="flex-grow overflow-auto p-4 bg-gray-100">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/home" element={<Home />} />
-            <Route path="/services" element={<Services />} />
-            <Route path="/consulting" element={<Consulting />} />
-            <Route path="/strategy" element={<Strategy />} />
-            <Route path="/operations" element={<Operations />} />
-            <Route path="/development" element={<Development />} />
-            <Route path="/support" element={<Support />} />
-            <Route path="/features" element={<Features />} />
-            <Route path="/contact" element={<Contact />} />
-          </Routes>
-        </div>
-
-        {/* Footer */}
-        <Footer />
-      </div>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="overview" element={<Overview />} />
+          <Route path="analytics" element={<Analytics />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="users" element={<Users />} />
+          <Route path="users/add" element={<AddUser />} />
+          <Route path="users/manage" element={<ManageUsers />} />
+          <Route path="settings" element={<Settings />} />
+          <Route path="messages" element={<Messages />} />
+        </Route>
+      </Routes>
     </Router>
   );
 };
