@@ -6,7 +6,7 @@ const Dashboard = () => {
       {[...Array(6)].map((_, i) => (
         <div
           key={i}
-          className="bg-white shadow-md rounded-md p-4 hover:shadow-lg transition"
+          className="bg-white dark:bg-gray-800 dark:text-white shadow-md rounded-md p-4 hover:shadow-lg transition"
         >
           <h3 className="font-bold text-lg mb-2">Card {i + 1}</h3>
           <p className="text-gray-600">This is a responsive dashboard card.</p>

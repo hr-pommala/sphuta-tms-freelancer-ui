@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   FiMenu,
   FiSearch,
@@ -10,22 +10,12 @@ import {
   FiSettings,
 } from "react-icons/fi";
 
-const Header = ({ toggleSidebar }) => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+const Header = ({ toggleSidebar, isDarkMode, setIsDarkMode }) => {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
-  // Apply dark mode class to <html> or <body>
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [isDarkMode]);
-
   return (
-    <header className="flex justify-between items-center px-4 py-3 bg-blue-600 text-white shadow-md fixed top-0 left-0 right-0 z-50 h-16 dark:bg-gray-900">
+    <header className="flex justify-between items-center px-4 py-3 bg-blue-600 dark:bg-gray-900 text-white shadow-md fixed top-0 left-0 right-0 z-50 h-16">
       {/* Left: Logo and Sidebar Toggle */}
       <div className="flex items-center space-x-4">
         <button className="text-2xl" onClick={toggleSidebar}>
@@ -58,12 +48,12 @@ const Header = ({ toggleSidebar }) => {
         </button>
 
         {/* Notifications */}
-        <div className="relative">
-          <button
-            className="text-xl"
-            onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-            title="Notifications"
-          >
+        <div
+          className="relative"
+          onMouseEnter={() => setIsNotificationsOpen(true)}
+          onMouseLeave={() => setIsNotificationsOpen(false)}
+        >
+          <button className="text-xl" title="Notifications">
             <FiBell />
           </button>
           {isNotificationsOpen && (
