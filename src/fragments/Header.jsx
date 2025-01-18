@@ -10,15 +10,23 @@ import {
   FiSettings,
 } from "react-icons/fi";
 
-const Header = ({ toggleSidebar, isDarkMode, setIsDarkMode }) => {
+const Header = ({ toggleSidebar, isSidebarOpen, isDarkMode, setIsDarkMode }) => {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   return (
-    <header className="flex justify-between items-center px-4 py-3 bg-blue-600 dark:bg-gray-900 text-white shadow-md fixed top-0 left-0 right-0 z-50 h-16">
-      {/* Left: Logo and Sidebar Toggle */}
+    <header
+      className={`flex items-center justify-between px-4 py-3 bg-blue-600 dark:bg-gray-900 text-white shadow-md fixed top-0 z-40 h-16 transition-all duration-300 w-full ${
+        isSidebarOpen ? "pl-64" : "pl-16"
+      }`} // Add padding-left to ensure header respects sidebar width
+    >
+      {/* Left: Sidebar Toggle and Logo */}
       <div className="flex items-center space-x-4">
-        <button className="text-2xl" onClick={toggleSidebar}>
+        <button
+          className="text-2xl focus:outline-none"
+          onClick={toggleSidebar} // Toggles the sidebar
+          aria-label="Toggle Sidebar"
+        >
           <FiMenu />
         </button>
         <span className="text-xl font-bold">Dashboard</span>
@@ -40,7 +48,7 @@ const Header = ({ toggleSidebar, isDarkMode, setIsDarkMode }) => {
       <div className="flex items-center space-x-6">
         {/* Theme Toggle */}
         <button
-          className="text-xl"
+          className="text-xl focus:outline-none"
           onClick={() => setIsDarkMode(!isDarkMode)}
           title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
         >
@@ -53,7 +61,7 @@ const Header = ({ toggleSidebar, isDarkMode, setIsDarkMode }) => {
           onMouseEnter={() => setIsNotificationsOpen(true)}
           onMouseLeave={() => setIsNotificationsOpen(false)}
         >
-          <button className="text-xl" title="Notifications">
+          <button className="text-xl focus:outline-none" title="Notifications">
             <FiBell />
           </button>
           {isNotificationsOpen && (
@@ -79,10 +87,13 @@ const Header = ({ toggleSidebar, isDarkMode, setIsDarkMode }) => {
         </div>
 
         {/* User Profile */}
-        <div className="relative">
+        <div
+          className="relative"
+          onMouseEnter={() => setIsProfileOpen(true)}
+          onMouseLeave={() => setIsProfileOpen(false)}
+        >
           <button
-            className="flex items-center space-x-2"
-            onClick={() => setIsProfileOpen(!isProfileOpen)}
+            className="flex items-center space-x-2 focus:outline-none"
             title="Profile"
           >
             <FiUser />

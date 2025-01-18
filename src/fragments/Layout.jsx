@@ -11,23 +11,23 @@ const Layout = () => {
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
   return (
-    <div
-      className={`h-screen flex ${isDarkMode ? "dark" : ""}`} // Apply dark mode class
-    >
+    <div className={`flex h-screen ${isDarkMode ? "dark" : ""}`}>
       {/* Sidebar */}
       <Sidebar isSidebarOpen={isSidebarOpen} />
 
+      {/* Main Layout */}
       <div className="flex flex-col flex-grow">
         {/* Header */}
         <Header
           toggleSidebar={toggleSidebar}
           isDarkMode={isDarkMode}
           setIsDarkMode={setIsDarkMode}
+          isSidebarOpen={isSidebarOpen}
         />
 
-        {/* Main Content */}
+        {/* Content */}
         <main
-          className={`flex-grow p-4 bg-gray-100 dark:bg-gray-800 dark:text-white transition-all duration-300 ${
+          className={`flex-grow bg-gray-100 dark:bg-gray-800 p-4 transition-all duration-300 ${
             isSidebarOpen ? "ml-64" : "ml-16"
           } pt-16`}
         >

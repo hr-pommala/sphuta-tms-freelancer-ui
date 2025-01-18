@@ -23,12 +23,12 @@ const Sidebar = ({ isSidebarOpen }) => {
 
   return (
     <aside
-      className={`bg-gray-800 dark:bg-gray-900 text-white h-screen fixed transition-all duration-300 ${
-          isSidebarOpen ? "w-64" : "w-16"
-        }`}
+      className={`bg-gray-800 dark:bg-gray-900 text-white h-screen fixed top-0 left-0 z-50 transition-all duration-300 ${
+        isSidebarOpen ? "w-64" : "w-16"
+      }`}
     >
       {/* Search Bar */}
-      <div className={`p-4 ${isSidebarOpen ? "mt-0" : "mt-16"}`}>
+      <div className="p-4">
         {isSidebarOpen && (
           <input
             type="text"
@@ -41,11 +41,7 @@ const Sidebar = ({ isSidebarOpen }) => {
       </div>
 
       {/* Navigation Menu */}
-      <nav
-        className={`p-4 space-y-4 ${
-          isSidebarOpen ? "mt-0" : "mt-16"
-        }`} /* Push menu items below the header */
-      >
+      <nav className="p-4 space-y-4">
         {filteredMenus.map((menu, index) => (
           <div
             key={index}
