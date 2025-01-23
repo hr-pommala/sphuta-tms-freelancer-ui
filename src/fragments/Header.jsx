@@ -16,15 +16,17 @@ const Header = ({ toggleSidebar, isSidebarOpen, isDarkMode, setIsDarkMode }) => 
 
   return (
     <header
-      className={`flex items-center justify-between px-4 py-3 bg-blue-600 dark:bg-gray-900 text-white shadow-md fixed top-0 z-40 h-16 transition-all duration-300 w-full ${
-        isSidebarOpen ? "pl-64" : "pl-16"
-      }`} // Add padding-left to ensure header respects sidebar width
+      className={`flex items-center justify-between px-4 py-3 bg-blue-600 dark:bg-gray-900 text-white shadow-md fixed top-0 z-40 h-16 transition-all duration-300 w-full`}
     >
       {/* Left: Sidebar Toggle and Logo */}
-      <div className="flex items-center space-x-4">
+      <div
+        className={`flex items-center space-x-4 ${
+          isSidebarOpen ? "ml-64" : "ml-16"
+        } transition-all duration-300`}
+      >
         <button
           className="text-2xl focus:outline-none"
-          onClick={toggleSidebar} // Toggles the sidebar
+          onClick={toggleSidebar}
           aria-label="Toggle Sidebar"
         >
           <FiMenu />
