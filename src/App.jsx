@@ -22,6 +22,11 @@ import SettingsProfileList from "./pages/settings/SettingsProfileList";
 import SettingsProfileForm from "./pages/settings/SettingsProfileForm";
 import SettingsProfileView from "./pages/settings/SettingsProfileView";
 
+// Settings / Preferences (PascalCase paths)
+import PreferencesPage from "./pages/Settings/PreferencesPage";
+import PreferencesList from "./pages/Settings/PreferencesList";
+import PreferencesForm from "./pages/Settings/PreferencesForm";
+
 import TimesheetList from "./pages/Timesheets/TimesheetList";
 import NewTimesheet from "./pages/Timesheets/NewTimesheet"; // you already have
 import EditTimesheet from "./pages/Timesheets/EditTimesheet";
@@ -84,6 +89,23 @@ const App = () => {
               <Route index element={<TimeEntriesList />} />
               <Route path="new" element={<NewTimeEntry />} />
             </Route>
+
+            {/* Settings hub: PreferencesPage contains an <Outlet /> */}
+                      <Route path="settings" element={<PreferencesPage />}>
+                        <Route
+                          index
+                          element={
+                            <div className="p-4">
+                              Pick an action from Settings (Preferences, General, Security).
+                            </div>
+                          }
+                        />
+                        <Route path="preferences" element={<PreferencesList />} />
+                        <Route path="preferences/new" element={<PreferencesForm />} />
+                        <Route path="preferences/:userId" element={<PreferencesForm />} />
+                        <Route path="preferences/:userId/edit" element={<PreferencesForm />} />
+                        <Route path="preferences/:userId/patch" element={<PreferencesForm />} />
+                      </Route>
 
         </Route>
       </Routes>
