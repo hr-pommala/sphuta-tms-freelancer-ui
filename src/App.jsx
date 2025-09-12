@@ -36,6 +36,11 @@ import ListProjects from "./pages/Projects/ListProjects";
 import NewProject from "./pages/Projects/NewProject";
 import EditProject from "./pages/Projects/EditProject";
 
+// invoicing pages
+import SettingsInvoicingList from "./pages/settings/SettingsInvoicingList";
+import SettingsInvoicingForm from "./pages/settings/SettingsInvoicingForm";
+import SettingsInvoicingView from "./pages/settings/SettingsInvoicingView";
+
 const App = () => {
 
   return (
@@ -49,12 +54,11 @@ const App = () => {
            <Route path="settings" element={<Settings />} />
            <Route path="messages" element={<Messages />} />
 
-          {/* Clients */}
-          <Route path="clients/list" element={<ListClients />} />
-          <Route path="clients/new" element={<NewClient />} />
-          <Route path="clients" element={<ListClients />} />
-          <Route path="clients/new" element={<NewClient />} />
-          <Route path="clients/edit/:id" element={<NewClient />} />
+          {/* Settings Invoicing routes (consistent param name :userId) */}
+          <Route path="settings/invoicing" element={<SettingsInvoicingList />} />
+          <Route path="settings/invoicing/new" element={<SettingsInvoicingForm />} />
+          <Route path="settings/invoicing/view/:userId" element={<SettingsInvoicingView />} />
+          <Route path="settings/invoicing/edit/:userId" element={<SettingsInvoicingForm />} />
 
            {/* Settings Profile Management */}
            <Route path="settings/profile" element={<SettingsProfileList />} />
@@ -67,6 +71,13 @@ const App = () => {
            <Route path="users/add" element={<AddUser />} />
            <Route path="users/manage" element={<ManageUsers />} />
            <Route path="users/:id/edit" element={<EditUser />} />
+
+           {/* Clients */}
+           <Route path="clients/list" element={<ListClients />} />
+           <Route path="clients/new" element={<NewClient />} />
+           <Route path="clients" element={<ListClients />} />
+           <Route path="clients/new" element={<NewClient />} />
+           <Route path="clients/edit/:id" element={<NewClient />} />
 
             {/* Projects */}
             <Route path="projects" element={<ListProjects />} />

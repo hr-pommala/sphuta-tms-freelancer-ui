@@ -66,6 +66,7 @@ export const menuData = [
        { name: "General", component: "/general-settings" },
        { name: "Security", component: "/security-settings" },
        { name: "Profile Settings", component: "/settings/profile" },
+       { name: "Invoicing", component: "/settings/invoicing" }
      ],
    },
   {
