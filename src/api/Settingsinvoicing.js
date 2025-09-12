@@ -30,3 +30,4 @@ export default {
     return api.delete(`${BASE}/${encodeURIComponent(userId)}`);
   },
 };
+
