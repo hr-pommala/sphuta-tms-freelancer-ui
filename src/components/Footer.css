@@ -186,3 +186,24 @@
     margin-top: 10px;
   }
 }
+.footer-bottom {
+  width: 100%;
+  padding: 15px 20px;
+  background-color: #111; /* or your footer bg */
+  color: #ccc;
+  text-align: center; /* Center text by default */
+  font-size: 14px;
+  border-top: 1px solid #333;
+}
+
+/* Responsive tweaks */
+@media (min-width: 768px) {
+  .footer-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: left; /* Left-align on larger screens */
+    font-size: 15px;
+  }
+}
+
