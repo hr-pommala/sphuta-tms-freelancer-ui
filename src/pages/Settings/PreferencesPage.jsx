@@ -5,7 +5,7 @@ import { Outlet, NavLink } from "react-router-dom";
 const PreferencesPage = () => {
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Settings</h1>
+      <h1 className="text-2xl font-bold mb-4">Settings Prefernces</h1>
 
       <nav className="flex gap-3 mb-6">
         <NavLink
