@@ -67,6 +67,7 @@ export const menuData = [
        { name: "Security", component: "/security-settings" },
        { name: "Profile Settings", component: "/settings/profile" },
        { name: "Preferences", component: "/settings/preferences" },
+       { name: "Invoicing", component: "/settings/invoicing" }
      ],
    },
   {
