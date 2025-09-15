@@ -22,6 +22,11 @@ import SettingsProfileList from "./pages/settings/SettingsProfileList";
 import SettingsProfileForm from "./pages/settings/SettingsProfileForm";
 import SettingsProfileView from "./pages/settings/SettingsProfileView";
 
+// Settings / Preferences (PascalCase paths)
+import PreferencesPage from "./pages/Settings/PreferencesPage";
+import PreferencesList from "./pages/Settings/PreferencesList";
+import PreferencesForm from "./pages/Settings/PreferencesForm";
+
 import TimesheetList from "./pages/Timesheets/TimesheetList";
 import NewTimesheet from "./pages/Timesheets/NewTimesheet"; // you already have
 import EditTimesheet from "./pages/Timesheets/EditTimesheet";
@@ -36,6 +41,11 @@ import ListProjects from "./pages/Projects/ListProjects";
 import NewProject from "./pages/Projects/NewProject";
 import EditProject from "./pages/Projects/EditProject";
 
+// invoicing pages
+import SettingsInvoicingList from "./pages/settings/SettingsInvoicingList";
+import SettingsInvoicingForm from "./pages/settings/SettingsInvoicingForm";
+import SettingsInvoicingView from "./pages/settings/SettingsInvoicingView";
+
 const App = () => {
 
   return (
@@ -49,12 +59,11 @@ const App = () => {
            <Route path="settings" element={<Settings />} />
            <Route path="messages" element={<Messages />} />
 
-          {/* Clients */}
-          <Route path="clients/list" element={<ListClients />} />
-          <Route path="clients/new" element={<NewClient />} />
-          <Route path="clients" element={<ListClients />} />
-          <Route path="clients/new" element={<NewClient />} />
-          <Route path="clients/edit/:id" element={<NewClient />} />
+          {/* Settings Invoicing routes (consistent param name :userId) */}
+          <Route path="settings/invoicing" element={<SettingsInvoicingList />} />
+          <Route path="settings/invoicing/new" element={<SettingsInvoicingForm />} />
+          <Route path="settings/invoicing/view/:userId" element={<SettingsInvoicingView />} />
+          <Route path="settings/invoicing/edit/:userId" element={<SettingsInvoicingForm />} />
 
            {/* Settings Profile Management */}
            <Route path="settings/profile" element={<SettingsProfileList />} />
@@ -67,6 +76,13 @@ const App = () => {
            <Route path="users/add" element={<AddUser />} />
            <Route path="users/manage" element={<ManageUsers />} />
            <Route path="users/:id/edit" element={<EditUser />} />
+
+           {/* Clients */}
+           <Route path="clients/list" element={<ListClients />} />
+           <Route path="clients/new" element={<NewClient />} />
+           <Route path="clients" element={<ListClients />} />
+           <Route path="clients/new" element={<NewClient />} />
+           <Route path="clients/edit/:id" element={<NewClient />} />
 
             {/* Projects */}
             <Route path="projects" element={<ListProjects />} />
@@ -84,6 +100,23 @@ const App = () => {
               <Route index element={<TimeEntriesList />} />
               <Route path="new" element={<NewTimeEntry />} />
             </Route>
+
+            {/* Settings hub: PreferencesPage contains an <Outlet /> */}
+                      <Route path="settings" element={<PreferencesPage />}>
+                        <Route
+                          index
+                          element={
+                            <div className="p-4">
+                              Pick an action from Settings (Preferences, General, Security).
+                            </div>
+                          }
+                        />
+                        <Route path="preferences" element={<PreferencesList />} />
+                        <Route path="preferences/new" element={<PreferencesForm />} />
+                        <Route path="preferences/:userId" element={<PreferencesForm />} />
+                        <Route path="preferences/:userId/edit" element={<PreferencesForm />} />
+                        <Route path="preferences/:userId/patch" element={<PreferencesForm />} />
+                      </Route>
 
         </Route>
       </Routes>
