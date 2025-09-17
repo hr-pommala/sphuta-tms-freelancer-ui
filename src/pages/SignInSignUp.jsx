@@ -101,7 +101,7 @@ const SignInSignUp = () => {
         setError(res.message || "Invalid credentials");
       }
     } catch {
-      setError("User doesn't exist");
+      setError("Email doesn't exist");
     }
   };
 
@@ -154,6 +154,7 @@ const SignInSignUp = () => {
       setLoading(false);
 
       if (res.success) {
+        // keep success message but remain on signup form (user will click Sign In manually)
         setSuccess("Account created successfully. Please sign in.");
         setError("");
         setForm({});
@@ -230,18 +231,12 @@ const SignInSignUp = () => {
             {error && <p className="text-red-500 mt-3 text-sm">{error}</p>}
             {success && <p className="text-green-600 mt-3 text-sm">{success}</p>}
           </form>
-        ) : success ? (
-          <div>
-            <p className="text-green-600 text-center font-medium">{success}</p>
-            <div className="text-center mt-4">
-              <button className="bg-indigo-600 text-white px-6 py-2 rounded" onClick={() => setActiveTab("signin")}>
-                Go to Login
-              </button>
-            </div>
-          </div>
         ) : (
+          // Always show the signup form and display success message inline (no auto navigation)
           <form onSubmit={handleSignUp}>
-            {/* Sign Up form unchanged */}
+            {/* If signup succeeded, show the success message above the form */}
+            {success && <p className="text-green-600 text-center font-medium mb-4">{success}</p>}
+
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Create account</h2>
 
             <div className="grid grid-cols-2 gap-3 mb-3">
@@ -299,4 +294,3 @@ const SignInSignUp = () => {
 };
 
 export default SignInSignUp;
- 
