@@ -1,9 +1,10 @@
+// NewClient.jsx  (replace your existing file with this)
 import React, { useEffect, useMemo, useState } from "react";
-import axios from "axios";
+import api from "../../api/axios"; // <-- use central api instance
 import { useNavigate, useParams } from "react-router-dom";
 
 const API_BASE = `${import.meta.env.VITE_API_BASE}/clients`;
-const USERS_API = `${import.meta.env.VITE_API_BASE}/users`; // <- adjust if your path differs
+const USERS_API_PATH = "/users"; // call via `api`, not absolute URL
 
 /** Cascading: state → city → ZIP */
 const STATES = [
@@ -150,12 +151,25 @@ const NewClient = () => {
     let alive = true;
     const ctrl = new AbortController();
     setLoadingUsers(true);
+
     (async () => {
       try {
-        const res = await axios.get(USERS_API, { params: { page: 0, size: 200 }, signal: ctrl.signal });
-        const list = res?.data?.data ?? res?.data ?? [];
+        // Use the central `api` instance and request the users endpoint with params.
+        // Backend frequently returns paginated responses like { data: { content: [...] } }
+        const res = await api.get(USERS_API_PATH, {
+          params: { page: 0, size: 200 },
+          signal: ctrl.signal,
+        });
+
+        // prefer paginated content -> fallback to other shapes
+        const list =
+          res?.data?.data?.content ??
+          res?.data?.data ??
+          res?.data ??
+          [];
+
         if (alive) {
-          setUsers(list);
+          setUsers(Array.isArray(list) ? list : []);
           setUsersError(null);
         }
       } catch (e) {
@@ -167,6 +181,7 @@ const NewClient = () => {
         if (alive) setLoadingUsers(false);
       }
     })();
+
     return () => {
       alive = false;
       ctrl.abort();
@@ -218,7 +233,7 @@ const NewClient = () => {
 
     (async () => {
       try {
-        const res = await axios.get(`${API_BASE}/${editId}`, { signal: ctrl.signal });
+        const res = await api.get(`${API_BASE}/${editId}`, { signal: ctrl.signal });
         const dto = res?.data?.data ?? res?.data;
         if (dto) {
           fill(dto);
@@ -230,8 +245,8 @@ const NewClient = () => {
 
       try {
         const [a, b] = await Promise.all([
-          axios.get(API_BASE, { params: { active: true, page: 0, size: 10000 }, signal: ctrl.signal }),
-          axios.get(API_BASE, { params: { active: false, page: 0, size: 10000 }, signal: ctrl.signal }),
+          api.get(API_BASE, { params: { active: true, page: 0, size: 10000 }, signal: ctrl.signal }),
+          api.get(API_BASE, { params: { active: false, page: 0, size: 10000 }, signal: ctrl.signal }),
         ]);
         const combined = [...(a.data?.data || []), ...(b.data?.data || [])];
         const dto = combined.find((x) => x.id === editId);
@@ -288,8 +303,8 @@ const NewClient = () => {
     if (!email || !emailRegex.test(email) || !companyName || !companyName.trim()) return false;
     try {
       const [act, arc] = await Promise.all([
-        axios.get(API_BASE, { params: { active: true, search: email, page: 0, size: 20 } }),
-        axios.get(API_BASE, { params: { active: false, search: email, page: 0, size: 20 } }),
+        api.get(API_BASE, { params: { active: true, search: email, page: 0, size: 20 } }),
+        api.get(API_BASE, { params: { active: false, search: email, page: 0, size: 20 } }),
       ]);
       const pick = (r) => r?.data?.data ?? [];
       const found = [...pick(act), ...pick(arc)].some(
@@ -349,9 +364,9 @@ const NewClient = () => {
       setSubmitting(true);
       const payload = sanitizePayload(formData);
       if (isEdit) {
-        await axios.put(`${API_BASE}/${editId}`, payload, { headers: { "Content-Type": "application/json" } });
+        await api.put(`${API_BASE}/${editId}`, payload, { headers: { "Content-Type": "application/json" } });
       } else {
-        await axios.post(API_BASE, payload, { headers: { "Content-Type": "application/json" } });
+        await api.post(API_BASE, payload, { headers: { "Content-Type": "application/json" } });
       }
       navigate("/clients", { replace: true });
     } catch (err) {
@@ -656,3 +671,4 @@ const NewClient = () => {
 };
 
 export default NewClient;
+ 
