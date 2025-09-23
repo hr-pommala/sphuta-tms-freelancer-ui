@@ -14,6 +14,7 @@ function NewTimeEntry() {
     description: "",
     hours: "",
     rateAtEntry: "",
+    taskId: "", // optional: allow user to pass task id
   });
 
   const [errors, setErrors] = useState({});
@@ -41,16 +42,22 @@ function NewTimeEntry() {
 
   const validate = () => {
     const newErrors = {};
-    if (!form.timesheetId) newErrors.timesheetId = "Timesheet ID is required";
+    if (!form.timesheetId && form.timesheetId !== 0) newErrors.timesheetId = "Timesheet ID is required";
     if (!form.entryDate) newErrors.entryDate = "Entry Date is required";
     if (!form.description) newErrors.description = "Description is required";
-    if (!form.hours) newErrors.hours = "Hours are required";
+    if (form.hours === "" || form.hours === null) newErrors.hours = "Hours are required";
+    if (form.hours !== "" && Number.isNaN(parseFloat(form.hours))) newErrors.hours = "Hours must be a number";
     if (form.hours && parseFloat(form.hours) <= 0) {
       newErrors.hours = "Hours must be greater than 0";
     }
-    if (form.rateAtEntry && parseFloat(form.rateAtEntry) <= 0) {
+    if (form.rateAtEntry !== "" && !Number.isNaN(parseFloat(form.rateAtEntry)) && parseFloat(form.rateAtEntry) <= 0) {
       newErrors.rateAtEntry = "Rate must be greater than 0 if provided";
     }
+    // optional: validate timesheetId is integer
+    if (form.timesheetId && !/^\d+$/.test(String(form.timesheetId))) {
+      newErrors.timesheetId = "Timesheet ID must be a whole number";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -63,54 +70,85 @@ function NewTimeEntry() {
     setSuccess("");
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setApiError("");
     setSuccess("");
+    setErrors({});
 
     if (!validate()) return;
 
     setLoading(true);
 
+    // Ensure numeric values are sent as numbers.
+    // Keep two decimal places for hours and rate where relevant.
+    const hoursNum = parseFloat(form.hours);
+    const hoursToSend = Number(Number.isFinite(hoursNum) ? Number(hoursNum.toFixed(2)) : hoursNum);
+
+    let rateNum = null;
+    if (form.rateAtEntry !== "" && form.rateAtEntry !== null) {
+      rateNum = parseFloat(form.rateAtEntry);
+      rateNum = Number.isFinite(rateNum) ? Number(rateNum.toFixed(2)) : rateNum;
+    }
+
     const payload = {
       timesheetId: parseInt(form.timesheetId, 10),
       entryDate: formatDate(form.entryDate),
       description: form.description,
-      hours: parseFloat(form.hours),
-      rateAtEntry: form.rateAtEntry ? parseFloat(form.rateAtEntry) : null,
+      hours: hoursToSend,
+      rateAtEntry: rateNum,
+      taskId: form.taskId ? parseInt(form.taskId, 10) : null,
     };
 
-    axiosClient
-      .post("/time-entries", payload)
-      .then((res) => {
-        const created = res?.data ?? payload;
+    try {
+      const res = await axiosClient.post("/time-entries", payload);
+      // Backend wraps response in TmsApiResponse { status, message, data }
+      const created = res?.data?.data ?? res?.data ?? null;
 
-        // show success message first
-        setSuccess("✅ Time entry created successfully!");
+      // If created is null-ish, fallback to payload
+      const createdEntry = created ?? payload;
 
-        // keep message visible for 1.5s, then dispatch event so parent switches to list
-        timerRef.current = setTimeout(() => {
-          window.dispatchEvent(new CustomEvent("timeEntryCreated", { detail: created }));
+      setSuccess("✅ Time entry created successfully!");
 
-          // reset form after dispatch (optional)
-          setForm({
-            timesheetId: "",
-            entryDate: null,
-            description: "",
-            hours: "",
-            rateAtEntry: "",
-          });
+      // Keep message visible briefly, then notify parent/listeners and reset form
+      timerRef.current = setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("timeEntryCreated", { detail: createdEntry }));
 
-          // clear success message (optional)
-          setSuccess("");
-          timerRef.current = null;
-        }, 1500);
-      })
-      .catch((err) => {
-        setApiError(err.response?.data?.message || "Failed to create time entry");
-        console.error(err);
-      })
-      .finally(() => setLoading(false));
+        // reset form
+        setForm({
+          timesheetId: "",
+          entryDate: null,
+          description: "",
+          hours: "",
+          rateAtEntry: "",
+          taskId: "",
+        });
+
+        setSuccess("");
+        timerRef.current = null;
+      }, 1200);
+    } catch (err) {
+      // Defensive extraction of backend error formats
+      const resp = err?.response?.data;
+      if (resp) {
+        // If backend returns validation errors map: { errors: { field: "msg" } }
+        if (resp.errors && typeof resp.errors === "object") {
+          setErrors((prev) => ({ ...prev, ...resp.errors }));
+          setApiError(resp.message || "Validation failed");
+        } else if (resp.data && resp.data.errors) {
+          setErrors((prev) => ({ ...prev, ...resp.data.errors }));
+          setApiError(resp.data.message || resp.message || "Validation failed");
+        } else {
+          // fallback to message fields
+          setApiError(resp.message || resp.error || JSON.stringify(resp) || "Failed to create time entry");
+        }
+      } else {
+        setApiError(err.message || "Failed to create time entry");
+      }
+      console.error("NewTimeEntry submit error:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancel = () => {
@@ -120,6 +158,7 @@ function NewTimeEntry() {
       description: "",
       hours: "",
       rateAtEntry: "",
+      taskId: "",
     });
     setErrors({});
     setApiError("");
@@ -205,7 +244,7 @@ function NewTimeEntry() {
           <label className="block mb-1 font-medium">Hours</label>
           <input
             type="number"
-            step="0.1"
+            step="0.01"
             name="hours"
             value={form.hours}
             onChange={handleChange}
@@ -226,6 +265,19 @@ function NewTimeEntry() {
             className="w-full border px-3 py-2 rounded focus:ring focus:ring-blue-300"
           />
           {errors.rateAtEntry && <p className="text-red-600 text-sm mt-1">{errors.rateAtEntry}</p>}
+        </div>
+
+        {/* Task ID (optional) */}
+        <div>
+          <label className="block mb-1 font-medium">Task ID (optional)</label>
+          <input
+            type="number"
+            name="taskId"
+            value={form.taskId}
+            onChange={handleChange}
+            className="w-full border px-3 py-2 rounded focus:ring focus:ring-blue-300"
+          />
+          {errors.taskId && <p className="text-red-600 text-sm mt-1">{errors.taskId}</p>}
         </div>
 
         {/* Buttons */}

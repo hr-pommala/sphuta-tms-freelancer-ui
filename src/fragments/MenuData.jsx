@@ -12,6 +12,15 @@ export const menuData = [
       { name: "Reports", component: "/reports" },
     ],
   },
+   {
+      name: "Users",
+      icon: <FiUser />,
+      component: "/users",
+      submenus: [
+        { name: "Add User", component: "/users/add" },
+        { name: "Manage Users", component: "/users/manage" },
+      ],
+    },
   {
     name: "Clients",
     icon: <FaUsers />,
@@ -30,15 +39,7 @@ export const menuData = [
       { name: "New Project", component: "/projects/new" },
     ],
   },
-  {
-    name: "Users",
-    icon: <FiUser />,
-    component: "/users",
-    submenus: [
-      { name: "Add User", component: "/users/add" },
-      { name: "Manage Users", component: "/users/manage" },
-    ],
-  },
+
 
   // NEW: Tasks menu
   {
