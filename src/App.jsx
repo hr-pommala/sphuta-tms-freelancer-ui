@@ -35,7 +35,7 @@ import EditTimesheet from "./pages/Timesheets/EditTimesheet";
 import TimeEntries from "./pages/TimeEntries/TimeEntries";
 import TimeEntriesList from "./pages/TimeEntries/TimeEntriesList";
 import NewTimeEntry from "./pages/TimeEntries/NewTimeEntry";
-
+import TimeEntryPage from "./pages/TimeEntries/TimeEntryPage";
 // Projects
 import ListProjects from "./pages/Projects/ListProjects";
 import NewProject from "./pages/Projects/NewProject";
@@ -49,6 +49,9 @@ import SettingsInvoicingView from "./pages/settings/SettingsInvoicingView";
 import SignInSignUp from "./pages/SignInSignUp";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+
+import TasksPage from "./pages/tasks/TasksPage";
+import EditTaskPage from "./pages/tasks/EditTaskPage";
 
 const App = () => {
   return (
@@ -108,7 +111,14 @@ const App = () => {
           <Route path="time-entries" element={<TimeEntries />}>
             <Route index element={<TimeEntriesList />} />
             <Route path="new" element={<NewTimeEntry />} />
+            <Route path="bulk" element={<TimeEntryPage />} />
+
           </Route>
+
+            <Route path="/tasks" element={<TasksPage />} />
+            <Route path="/tasks/new" element={<TasksPage />} />
+            <Route path="/tasks/:id/edit" element={<EditTaskPage />} />
+
 
           {/* Settings hub with Preferences */}
           <Route path="settings" element={<PreferencesPage />}>

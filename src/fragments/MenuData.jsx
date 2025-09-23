@@ -1,6 +1,6 @@
-import { FiGrid, FiUser, FiSettings, FiMail ,FiFolder} from "react-icons/fi";
-import { FaUsers } from "react-icons/fa"; // Added icon for Clients
-import { FaRegClock } from "react-icons/fa";
+import { FiGrid, FiUser, FiSettings, FiMail, FiFolder } from "react-icons/fi";
+import { FaUsers, FaRegClock } from "react-icons/fa";
+
 export const menuData = [
   {
     name: "Dashboard",
@@ -12,10 +12,9 @@ export const menuData = [
       { name: "Reports", component: "/reports" },
     ],
   },
-
   {
     name: "Clients",
-    icon: <FaUsers />, // Clients icon
+    icon: <FaUsers />,
     component: "/clients",
     submenus: [
       { name: "List Clients", component: "/clients/list" },
@@ -23,23 +22,35 @@ export const menuData = [
     ],
   },
   {
-     name: "Projects",
-     icon: <FiFolder />,
-     component: "/projects",
-     submenus: [
-       { name: "List Projects", component: "/projects/list" },
-       { name: "New Project", component: "/projects/new" },
-     ],
-   },
+    name: "Projects",
+    icon: <FiFolder />,
+    component: "/projects",
+    submenus: [
+      { name: "List Projects", component: "/projects/list" },
+      { name: "New Project", component: "/projects/new" },
+    ],
+  },
   {
     name: "Users",
     icon: <FiUser />,
     component: "/users",
     submenus: [
       { name: "Add User", component: "/users/add" },
-      { name: "Manage Users", component: "/users/manage" }
+      { name: "Manage Users", component: "/users/manage" },
     ],
   },
+
+  // NEW: Tasks menu
+  {
+    name: "Tasks",
+    icon: <FiFolder />, // use folder or any task icon you like
+    component: "/tasks",
+    submenus: [
+      { name: "List Tasks", component: "/tasks" },
+      { name: "Create Task", component: "/tasks/new" },
+    ],
+  },
+
   {
     name: "Timesheets",
     icon: <FaRegClock />,
@@ -47,37 +58,33 @@ export const menuData = [
     submenus: [
       { name: "List Timesheets", component: "/timesheets" },
       { name: "New Timesheet", component: "/timesheets/new" },
-      // Edit is dynamic, accessed from list page
     ],
   },
   {
     name: "Time Entries",
     icon: <FaRegClock />,
     component: "/time-entries",
-    submenus: [
-      { name: "TimeEntry", component: "/time-entries" }
-    ],
+    submenus: [{ name: "TimeEntry", component: "/time-entries" }],
   },
- {
-     name: "Settings",
-     icon: <FiSettings />,
-     component: "/settings",
-     submenus: [
-       { name: "General", component: "/general-settings" },
-       { name: "Security", component: "/security-settings" },
-       { name: "Profile Settings", component: "/settings/profile" },
-       { name: "Preferences", component: "/settings/preferences" },
-       { name: "Invoicing", component: "/settings/invoicing" }
-     ],
-   },
   {
-    name: "Messages",
-    icon: <FiMail />,
-    component: "/messages",
+    name: "Settings",
+    icon: <FiSettings />,
+    component: "/settings",
     submenus: [
-      { name: "Inbox", component: "/inbox" },
-      { name: "Sent", component: "/sent-messages" },
-
+       { name: "Preferences", component: "/settings/preferences" },
+//       { name: "General", component: "/general-settings" },
+//       { name: "Security", component: "/security-settings" },
+//       { name: "Profile Settings", component: "/settings/profile" },
+//       { name: "Invoicing", component: "/settings/invoicing" },
     ],
   },
+//   {
+//     name: "Messages",
+//     icon: <FiMail />,
+//     component: "/messages",
+//     submenus: [
+//       { name: "Inbox", component: "/inbox" },
+//       { name: "Sent", component: "/sent-messages" },
+//     ],
+//   },
 ];

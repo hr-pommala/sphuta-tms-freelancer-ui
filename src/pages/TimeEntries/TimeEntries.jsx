@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import TimeEntriesList from "./TimeEntriesList";
 import NewTimeEntry from "./NewTimeEntry";
+import TimeEntryPage from "./TimeEntryPage";
 
 const TimeEntries = () => {
   const [activeTab, setActiveTab] = useState("list");
@@ -38,10 +39,24 @@ const TimeEntries = () => {
         >
           New Entry
         </button>
+        <button
+          className={`px-4 py-2 rounded ${
+            activeTab === "bulk" ? "bg-gray-800 text-white" : "bg-gray-200"
+          }`}
+          onClick={() => setActiveTab("bulk")}
+        >
+          Worklog Entry
+        </button>
       </div>
 
       {/* Content */}
-      {activeTab === "list" ? <TimeEntriesList /> : <NewTimeEntry />}
+      {activeTab === "list" ? (
+        <TimeEntriesList />
+      ) : activeTab === "new" ? (
+        <NewTimeEntry />
+      ) : (
+        <TimeEntryPage />
+      )}
     </div>
   );
 };
