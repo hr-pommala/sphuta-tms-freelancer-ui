@@ -92,9 +92,31 @@ export const getMe = async () => {
   }
 };
 
+/**
+ * Notify backend to revoke the current token.
+ * The axios instance attaches Authorization header automatically via interceptor.
+ * Returns { success: true, data } on success or the parsed error object on failure.
+ */
+export const logoutRequest = async () => {
+  try {
+    const res = await api.post("/auth/logout");
+    return { success: true, data: res.data };
+  } catch (err) {
+    return parseError(err);
+  }
+};
+
+/**
+ * Clear client-side session info. This preserves the previous behavior.
+ * Use this after logoutRequest (or on its own) to remove token & user from localStorage.
+ */
 export const logout = () => {
-  localStorage.removeItem("token");
-  localStorage.removeItem("user");
+  try {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+  } catch (e) {
+    // ignore storage errors
+  }
 };
 
 export default {
@@ -104,4 +126,5 @@ export default {
   resetPassword,
   getMe,
   logout,
+  logoutRequest,
 };
