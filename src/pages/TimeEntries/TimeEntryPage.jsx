@@ -19,9 +19,15 @@ function startOfWeekMonday(d) {
   dt.setDate(dt.getDate() + shift);
   return dt;
 }
+
 function isoKey(d) {
-  return new Date(d).toISOString().split("T")[0];
+  const dt = new Date(d);
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth() + 1).padStart(2, "0");
+  const day = String(dt.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
+
 function getWeekDates(currentDate) {
   const start = startOfWeekMonday(currentDate);
   const arr = [];
@@ -289,21 +295,17 @@ export default function TimeEntryPage() {
     return null;
   }
 
-  // Try to fetch entries for a timesheet id using your API helper
   async function fetchEntriesByTimesheetId(tsId) {
     if (!tsId) return [];
     try {
       const res = await timesheetsApi.listEntriesByTimesheet(tsId);
       const normalized = normalizeAxiosData(res) ?? [];
-      // the controller returns TmsApiResponse.success(..., data)
-      // where data might be list or an object with 'entries'
       if (Array.isArray(normalized)) return normalized;
       if (normalized && Array.isArray(normalized.entries)) return normalized.entries;
-      // sometimes backend wraps again at a deeper level
       if (res?.data && Array.isArray(res.data)) return res.data;
       if (res?.data?.data && Array.isArray(res.data.data)) return res.data.data;
     } catch (err) {
-      console.warn("fetchEntriesByTimesheetId failed for", tsId, err);
+      console.warn("fetchEntriesByTimesheetId failed for", tsId, err, err?.response?.status, err?.response?.data);
     }
     return [];
   }
@@ -340,9 +342,7 @@ export default function TimeEntryPage() {
         try {
           const res = await timesheetsApi.getOrCreateTimesheet(projectId, periodStart, periodEnd);
           timesheet = normalizeAxiosData(res) ?? res;
-          // if wrapped as {data: {...}} normalizeAxiosData will extract .data
         } catch (err) {
-          // if getOrCreate fails, attempt direct create (some backends return 409)
           try {
             const res2 = await timesheetsApi.createTimesheet({ projectId: Number(projectId), periodStart, periodEnd });
             timesheet = normalizeAxiosData(res2) ?? res2;
@@ -361,7 +361,6 @@ export default function TimeEntryPage() {
         tsObj?.timesheet_id ??
         tsObj;
 
-      // when tsId is a full object with fields, ensure numeric id
       const resolvedTsId = typeof tsId === "object" && tsId !== null
         ? (tsId.id ?? tsId.timesheetId ?? tsId.timesheet_id ?? null)
         : tsId;
@@ -380,7 +379,6 @@ export default function TimeEntryPage() {
       const monthAcc = {};
 
       for (const e of entries) {
-        // possible fields: entryDate, date, entry_date
         const entryDate = e.entryDate ?? e.date ?? e.entry_date ?? e.createdAt ?? e.created_dt ?? null;
         const hours = (e.hours ?? e.hoursWorked ?? e.duration ?? e.value) ?? null;
         if (!entryDate || hours == null) continue;
@@ -394,7 +392,6 @@ export default function TimeEntryPage() {
         // weekly accumulator
         weekAcc[iso] = weekAcc[iso] ?? {};
         weekAcc[iso][String(projectId)] = weekAcc[iso][String(projectId)] ?? {};
-        // store hours as string with up to 2 decimals
         weekAcc[iso][String(projectId)][tKey] = String(Number(Number(hours).toFixed(2)));
 
         // monthly accumulator (sum by day for project)
@@ -403,7 +400,7 @@ export default function TimeEntryPage() {
         monthAcc[String(projectId)][String(dayNum)] = prev + Number(hours);
       }
 
-      // stringify monthAcc values to strings (like other code expects)
+      // stringify monthAcc values to strings
       const monthAccStr = {};
       for (const pid of Object.keys(monthAcc)) {
         monthAccStr[pid] = monthAccStr[pid] ?? {};
@@ -417,6 +414,37 @@ export default function TimeEntryPage() {
     } catch (err) {
       console.warn("loadEntriesForProjectAndPeriod failed", err);
       return { weekly: {}, monthly: {} };
+    }
+  }
+
+  /* ---------- helper to refresh UI state from backend after saves ----------
+     This is the key change to prevent double-incrementing: after a successful
+     save (weekly/monthly), reload the entries from the server and overwrite
+     the UI state with the authoritative values.
+  */
+  async function refreshEntriesForProjectPeriod(projectId, periodStart, periodEnd) {
+    try {
+      const { weekly: wAcc, monthly: mAcc } = await loadEntriesForProjectAndPeriod(projectId, periodStart, periodEnd);
+
+      // Merge weekly: ensure we set the project's data for the specific iso dates returned
+      setWeeklyEntries(prev => {
+        const copy = { ...prev };
+        for (const iso of Object.keys(wAcc)) {
+          copy[iso] = { ...(copy[iso] ?? {}) };
+          // only replace this project's entries for that iso
+          copy[iso][String(projectId)] = { ...(wAcc[iso][String(projectId)] ?? {}) };
+        }
+        return copy;
+      });
+
+      // Overwrite monthlyEntries for the project with authoritative data
+      setMonthlyEntries(prev => {
+        const copy = { ...prev };
+        copy[String(projectId)] = { ...(copy[String(projectId)] ?? {}), ...(mAcc[String(projectId)] ?? {}) };
+        return copy;
+      });
+    } catch (err) {
+      console.warn("refreshEntriesForProjectPeriod failed", err);
     }
   }
 
@@ -482,15 +510,11 @@ export default function TimeEntryPage() {
 
   /* ---------- per-day total helpers & validation ---------- */
   function computeDailyTotalForProjectAndIso(projectId, iso) {
+    // IMPORTANT: only compute from weeklyEntries (which are refreshed from DB).
+    // Do not mix monthlyEntries here — monthly UI is authoritative for month inputs.
     const tasksObj = weeklyEntries[iso]?.[String(projectId)] ?? {};
     let sum = 0;
     for (const t of Object.keys(tasksObj)) sum += Number(tasksObj[t] || 0);
-    const dt = new Date(iso);
-    const dayNum = dt.getDate();
-    const monthlyVal = monthlyEntries[String(projectId)]?.[String(dayNum)];
-    if (monthlyVal && !Number.isNaN(Number(monthlyVal))) {
-      sum = Math.max(sum, Number(monthlyVal || 0));
-    }
     return sum;
   }
 
@@ -573,7 +597,7 @@ export default function TimeEntryPage() {
     }
   }
 
-  /* ---------- Save flows (unchanged) ---------- */
+  /* ---------- Save flows (cleaned and fixed) ---------- */
   async function saveWeekToBackend() {
     const blocked = weekDates.some(d => submittedMonthKeys.includes(monthKeyFromDate(d)));
     if (blocked) {
@@ -615,11 +639,16 @@ export default function TimeEntryPage() {
           const raw = weeklyEntries[iso]?.[String(pid)]?.[t];
           const hours = raw === "" || raw == null ? 0 : Number(raw);
           if (!hours || Number.isNaN(hours) || hours <= 0) continue;
+
+          const taskObj = projectTasks.find(pt => (pt.taskName ?? "").toLowerCase() === String(t).toLowerCase()) ?? null;
+          const taskId = taskObj ? taskObj.id : undefined;
+
           entries.push({
             entryDate: iso,
             description: `Task: ${t}`,
             hours: Number(Number(hours).toFixed(2)),
             rateAtEntry: p.hourlyRate ?? p.__raw?.hourlyRate ?? null,
+            taskId
           });
         }
       }
@@ -633,7 +662,7 @@ export default function TimeEntryPage() {
       const periodStart = isoKey(weekDates[0]);
       const periodEnd = isoKey(weekDates[weekDates.length - 1]);
 
-      // get or create timesheet (resilient wrapper in timesheetsApi)
+      // get or create timesheet
       const timesheetRes = await timesheetsApi.getOrCreateTimesheet(pid, periodStart, periodEnd);
       const timesheet = normalizeAxiosData(timesheetRes) ?? timesheetRes;
       const tsObj = timesheet?.data ?? timesheet ?? timesheetRes;
@@ -641,67 +670,71 @@ export default function TimeEntryPage() {
 
       if (!tsId) throw new Error("No timesheet id");
 
-      // call bulk-upsert (PUT /timesheets/{id}/entries) preferred
-      if (typeof timesheetsApi.bulkUpsert === "function") {
-        await timesheetsApi.bulkUpsert(tsId, { mode: "UPSERT", entries });
-      } else if (typeof timesheetsApi.bulkUpsertEntries === "function") {
-        await timesheetsApi.bulkUpsertEntries(tsId, { mode: "UPSERT", entries });
-      } else {
-        // fallback: attempt timesheet-scoped create for each entry
+      // try bulk upsert, fallback to per-entry create
+      try {
+        if (typeof timesheetsApi.bulkUpsertEntries === "function") {
+          await timesheetsApi.bulkUpsertEntries(tsId, { mode: "UPSERT", entries });
+        } else if (typeof timesheetsApi.bulkUpsert === "function") {
+          await timesheetsApi.bulkUpsert(tsId, { mode: "UPSERT", entries });
+        } else {
+          for (const e of entries) {
+            await timesheetsApi.createEntry({ ...e, timesheetId: tsId });
+          }
+        }
+      } catch (bulkErr) {
+        console.error("bulk upsert failed for weekly save", bulkErr?.response?.status, bulkErr?.response?.data);
+        // fallback to per-entry creates
         for (const e of entries) {
-          await timesheetsApi.createEntry({ ...e, timesheetId: tsId });
+          try {
+            await timesheetsApi.createEntry({ ...e, timesheetId: tsId });
+          } catch (perErr) {
+            console.error("createEntry failed for", e, perErr?.response?.status, perErr?.response?.data);
+          }
         }
       }
 
-      // merge back into monthlyEntries for UI
-      setMonthlyEntries(prev => {
-        const copy = { ...prev };
-        copy[String(pid)] = { ...(copy[String(pid)] ?? {}) };
-        for (const e of entries) {
-          const dt = new Date(e.entryDate);
-          const day = dt.getDate();
-          const prevVal = Number(copy[String(pid)][String(day)] || 0);
-          const newVal = prevVal + e.hours;
-          copy[String(pid)][String(day)] = Number.isInteger(newVal) ? String(Math.trunc(newVal)) : String(Number(newVal.toFixed(2)));
-        }
-        return copy;
-      });
+      // IMPORTANT:
+      // After saving, refresh authoritative entries from the backend to avoid local double-counting
+      await refreshEntriesForProjectPeriod(pid, periodStart, periodEnd);
 
       alert("Saved");
       window.dispatchEvent(new Event("timeEntryCreated"));
     } catch (err) {
-      console.error("Failed to save weekly entries:", err);
+      console.error("Failed to save weekly entries:", err, err?.response?.status, err?.response?.data);
       alert("Failed to save — see console.");
     } finally {
       setSaving(false);
     }
   }
 
-  async function saveMonthToBackend() {
+  /* ---------- Save month (silent option) and submit ---------- */
+  async function saveMonthToBackend(options = { silent: false }) {
+    const { silent } = options;
+
     if (submittedMonthKeys.includes(currentMonthKey)) {
-      alert("You already submitted hours for this month.");
-      return;
+      if (!silent) alert("You already submitted hours for this month.");
+      return false;
     }
 
     const pid = monthlySelectedProjectId;
     if (!pid) {
-      alert("Please select a project to save.");
-      return;
+      if (!silent) alert("Please select a project to save.");
+      return false;
     }
 
     const monthInvalid = Object.keys(validationErrors).find(k => k.startsWith(`D|M|${pid}|`));
     if (monthInvalid) {
-      alert("Please fix validation errors before saving (daily totals must not exceed 24h).");
-      return;
+      if (!silent) alert("Please fix validation errors before saving (daily totals must not exceed 24h).");
+      return false;
     }
 
     setSaving(true);
     try {
       const p = projects.find(pp => String(pp.id) === String(pid));
       if (!p) {
-        alert("Selected project not found.");
+        if (!silent) alert("Selected project not found.");
         setSaving(false);
-        return;
+        return false;
       }
 
       const y = currentDate.getFullYear();
@@ -718,18 +751,21 @@ export default function TimeEntryPage() {
         const val = daysObj[dayStr];
         const hours = val === "" || val == null ? 0 : Number(val);
         if (!hours || Number.isNaN(hours) || hours <= 0) continue;
+        const defaultTask = projectTasks.length ? projectTasks[0] : null;
+
         entries.push({
           entryDate: isoKey(new Date(y, m, dnum)),
-          description: `Task: ${projectTasks.length ? projectTasks[0].taskName : "Work"}`,
+          description: `Task: ${defaultTask ? (defaultTask.taskName ?? defaultTask.name) : "Work"}`,
           hours: Number(Number(hours).toFixed(2)),
           rateAtEntry: p.hourlyRate ?? p.__raw?.hourlyRate ?? null,
+          taskId: defaultTask ? defaultTask.id : undefined
         });
       }
 
       if (entries.length === 0) {
-        alert("No hours to save for the selected project.");
+        if (!silent) alert("No hours to save for the selected project.");
         setSaving(false);
-        return;
+        return false;
       }
 
       const timesheetRes = await timesheetsApi.getOrCreateTimesheet(pid, periodStart, periodEnd);
@@ -739,34 +775,38 @@ export default function TimeEntryPage() {
 
       if (!tsId) throw new Error("No timesheet id");
 
-      if (typeof timesheetsApi.bulkUpsertEntries === "function") {
-        await timesheetsApi.bulkUpsertEntries(tsId, { mode: "UPSERT", entries });
-      } else if (typeof timesheetsApi.bulkUpsert === "function") {
-        await timesheetsApi.bulkUpsert(tsId, { mode: "UPSERT", entries });
-      } else {
-        // fallback create per-entry
+      try {
+        if (typeof timesheetsApi.bulkUpsertEntries === "function") {
+          await timesheetsApi.bulkUpsertEntries(tsId, { mode: "UPSERT", entries });
+        } else if (typeof timesheetsApi.bulkUpsert === "function") {
+          await timesheetsApi.bulkUpsert(tsId, { mode: "UPSERT", entries });
+        } else {
+          for (const e of entries) {
+            await timesheetsApi.createEntry({ ...e, timesheetId: tsId });
+          }
+        }
+      } catch (bulkErr) {
+        console.error("bulk upsert failed for monthly save", bulkErr?.response?.status, bulkErr?.response?.data);
+        // fallback to per-entry creates
         for (const e of entries) {
-          await timesheetsApi.createEntry({ ...e, timesheetId: tsId });
+          try {
+            await timesheetsApi.createEntry({ ...e, timesheetId: tsId });
+          } catch (perErr) {
+            console.error("createEntry failed for", e, perErr?.response?.status, perErr?.response?.data);
+          }
         }
       }
 
-      // reflect saved data in weeklyEntries for UI
-      setWeeklyEntries(prev => {
-        const copy = { ...prev };
-        for (const e of entries) {
-          const iso = e.entryDate;
-          copy[iso] = copy[iso] ?? {};
-          copy[iso][String(pid)] = copy[iso][String(pid)] ?? {};
-          copy[iso][String(pid)][projectTasks.length ? projectTasks[0].taskName : "Work"] = String(Number(e.hours));
-        }
-        return copy;
-      });
+      // After saving, refresh authoritative entries from backend (prevents double increments)
+      await refreshEntriesForProjectPeriod(pid, periodStart, periodEnd);
 
-      alert("Saved");
+      if (!silent) alert("Saved");
       window.dispatchEvent(new Event("timeEntryCreated"));
+      return true;
     } catch (err) {
-      console.error("Failed to save monthly entries:", err);
-      alert("Failed to save — see console.");
+      console.error("Failed to save monthly entries:", err, err?.response?.status, err?.response?.data);
+      if (!silent) alert("Failed to save — see console.");
+      return false;
     } finally {
       setSaving(false);
     }
@@ -780,7 +820,11 @@ export default function TimeEntryPage() {
 
     setSaving(true);
     try {
-      await saveMonthToBackend();
+      const ok = await saveMonthToBackend({ silent: true });
+      if (!ok) {
+        alert("Failed to save prior to submit — see console.");
+        return;
+      }
 
       setSubmittedMonthKeys(prev => {
         if (prev.includes(currentMonthKey)) return prev;
@@ -790,7 +834,7 @@ export default function TimeEntryPage() {
       alert("Submitted");
       window.dispatchEvent(new Event("timeEntryCreated"));
     } catch (err) {
-      console.error("Failed to submit month:", err);
+      console.error("Failed to submit month:", err, err?.response?.status, err?.response?.data);
       alert("Failed to submit — see console.");
     } finally {
       setSaving(false);
@@ -824,11 +868,6 @@ export default function TimeEntryPage() {
   const weeklyNoTasks = Boolean(selectedWeeklyProjectId) && projectTasks.length === 0;
   const monthlyNoTasks = Boolean(monthlySelectedProjectId) && projectTasks.length === 0;
 
-  // Buttons disabled when:
-  // - no projects in system OR
-  // - selected project is missing OR
-  // - selected project is inactive OR
-  // - validation errors OR saving or submitted month constraints
   const noProjectsPresent = projects.length === 0;
   const weeklyHasValidationErrors = Object.keys(validationErrors).filter(k => k.startsWith("D|") || k.startsWith("W|")).length > 0;
   const monthlyHasValidationErrors = Object.keys(validationErrors).filter(k => k.startsWith("D|")).length > 0;
@@ -923,7 +962,7 @@ export default function TimeEntryPage() {
               )}
             </div>
 
-            {/* Weekly table - if no tasks, show message row + Daily Total row */}
+            {/* Weekly table */}
             <div className="overflow-x-auto">
               <table className="min-w-full">
                 <thead>
@@ -940,7 +979,6 @@ export default function TimeEntryPage() {
                 </thead>
 
                 <tbody>
-                  {/* If there are no tasks for the selected project, show the "No tasks..." row */}
                   {weeklyNoTasks && (
                     <tr className="border-t bg-white">
                       <td colSpan={9} className="p-6 text-center text-gray-600">
@@ -950,7 +988,6 @@ export default function TimeEntryPage() {
                     </tr>
                   )}
 
-                  {/* If there are tasks, render them. If no tasks, this list is empty. */}
                   {projectTasks.map((taskObj, ti) => {
                     const taskName = taskObj.taskName;
                     const color = TASK_COLORS_FALLBACK[ti % TASK_COLORS_FALLBACK.length];
@@ -998,7 +1035,6 @@ export default function TimeEntryPage() {
                     );
                   })}
 
-                  {/* Always show Daily Total row (requirement) */}
                   <tr className="border-t">
                     <td className="p-3 font-medium">Daily Total</td>
                     {weekDates.map((d, i) => {
@@ -1102,7 +1138,6 @@ export default function TimeEntryPage() {
                 )}
               </div>
 
-              {/* Monthly: always render calendar grid (no "No tasks..." message here) */}
               <div className="grid grid-cols-7 gap-5 text-center mb-3 text-sm font-medium">
                 <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>
               </div>
@@ -1138,13 +1173,12 @@ export default function TimeEntryPage() {
                                   const p = projects.find(pp => String(pp.id) === String(monthlySelectedProjectId));
                                   if (!p) return <div className="text-xs text-gray-400">—</div>;
                                   const iso = isoKey(d);
-                                  const weeklyTasksObj = weeklyEntries[iso]?.[String(p.id)] ?? {};
-                                  let weeklySum = 0;
-                                  for (const t of Object.keys(weeklyTasksObj)) {
-                                    weeklySum += Number(weeklyTasksObj[t] || 0);
-                                  }
+
+                                  // WEEKLY data is no longer used as fallback for monthly inputs.
+                                  // Monthly inputs are authoritative for the month; monthlyEntries is used.
                                   const monthlyVal = monthlyEntries[String(p.id)]?.[String(dayNumber)];
-                                  const displayVal = monthlyVal !== undefined && monthlyVal !== "" ? monthlyVal : (weeklySum ? Number(weeklySum.toFixed(2)) : "");
+                                  const displayVal = monthlyVal !== undefined && monthlyVal !== "" ? monthlyVal : "";
+
                                   const disabled = submittedMonthKeys.includes(currentMonthKey) || noProjectsPresent || !projectSelectedMonthlyActive;
                                   const errKey = makeMonthlyKey(p.id, dayNumber);
                                   const hasError = Boolean(validationErrors[errKey]);

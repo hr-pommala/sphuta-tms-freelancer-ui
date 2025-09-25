@@ -7,6 +7,7 @@ import TaskForm from "./TaskForm";
 import Modal from "../../components/ui/Modal";
 import Drawer from "../../components/ui/Drawer";
 import ConfirmModal from "../../components/ui/ConfirmModal";
+import api from "../../api/axios"; // used to load projects
 
 export default function TasksPage({ projectId = null, openCreateOnMount = false }) {
   const navigate = useNavigate();
@@ -24,6 +25,13 @@ export default function TasksPage({ projectId = null, openCreateOnMount = false 
   const [toDelete, setToDelete] = useState(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
+  // projects map (id -> { id, name, ... })
+  const [projectsMap, setProjectsMap] = useState({});
+  const [loadingProjects, setLoadingProjects] = useState(false);
+
+  const [projectName, setProjectName] = useState(null);
+  const [loadingProjectName, setLoadingProjectName] = useState(false);
+
   useEffect(() => {
     fetchTasks();
   }, [projectId]);
@@ -35,40 +43,131 @@ export default function TasksPage({ projectId = null, openCreateOnMount = false 
     }
   }, [openCreateOnMount, location?.pathname]);
 
- // inside src/pages/tasks/TasksPage.jsx (fetchTasks)
- async function fetchTasks() {
-   setLoading(true);
-   setError(null);
-   try {
-     const data = projectId ? await tasksApi.listByProject(projectId) : await tasksApi.listAll();
-     console.log("fetchTasks data:", data);
-     // ensure tasks is an array
-     setTasks(Array.isArray(data) ? data : (data ? [data] : []));
-   } catch (err) {
-     setError(err?.message || "Failed to fetch");
-   } finally {
-     setLoading(false);
-   }
- }
+  // load projects list (to map ids -> names for display)
+  useEffect(() => {
+    let mounted = true;
+    async function loadProjects() {
+      setLoadingProjects(true);
+      try {
+        const qs = new URLSearchParams();
+        qs.append("active", true);
+        qs.append("page", 0);
+        qs.append("size", 200);
+        const url = `/projects/projects?${qs.toString()}`;
+        const res = await api.get(url);
+        const candidate = res?.data?.data?.content ?? res?.data?.data ?? res?.data ?? res;
+        const list = Array.isArray(candidate) ? candidate : [];
+        const map = {};
+        list.forEach(raw => {
+          const id = raw.id ?? raw.projectId;
+          const name = raw.projectName ?? raw.name ?? raw.title ?? raw.code ?? `#${id}`;
+          if (id !== undefined && id !== null) map[String(id)] = { id, name, __raw: raw };
+        });
+        if (!mounted) return;
+        setProjectsMap(map);
+      } catch (err) {
+        console.error("Failed to load projects map", err);
+        if (!mounted) return;
+        setProjectsMap({});
+      } finally {
+        if (mounted) setLoadingProjects(false);
+      }
+    }
+    loadProjects();
+    return () => { mounted = false; };
+  }, []);
 
+  // if we have a projectId (coming from a project page), fetch the project's name (for modal title)
+  useEffect(() => {
+    let mounted = true;
+    async function loadProjectName() {
+      if (!projectId) {
+        setProjectName(null);
+        return;
+      }
+      setLoadingProjectName(true);
+      try {
+        // try to use projectsMap first
+        const fromMap = projectsMap[String(projectId)];
+        if (fromMap) {
+          if (mounted) setProjectName(fromMap.name);
+          return;
+        }
+        // fallback to API get
+        const p = await api.get(`/projects/${projectId}`).then(res => res?.data?.data ?? res?.data ?? res);
+        if (!mounted) return;
+        setProjectName(p?.projectName ?? p?.name ?? `#${p?.id ?? projectId}`);
+      } catch (err) {
+        console.error("Failed to fetch project name", err);
+        if (mounted) setProjectName(`#${projectId}`);
+      } finally {
+        if (mounted) setLoadingProjectName(false);
+      }
+    }
+    loadProjectName();
+    return () => {
+      mounted = false;
+    };
+  }, [projectId, projectsMap]);
 
-  async function handleCreate(payload) {
+  /* ---------------- showToast helper (small top-right toast) ---------------- */
+  function showToast(message = "", opts = { type: "info", timeout: 4000 }) {
+    const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const el = document.createElement("div");
+    el.id = id;
+    el.style.position = "fixed";
+    el.style.right = "20px";
+    el.style.top = "20px";
+    el.style.zIndex = 9999;
+    el.style.background = opts.type === "error" ? "#fee2e2" : "#ecfdf5";
+    el.style.color = opts.type === "error" ? "#991b1b" : "#065f46";
+    el.style.border = "1px solid rgba(0,0,0,0.06)";
+    el.style.padding = "12px 16px";
+    el.style.borderRadius = "8px";
+    el.style.boxShadow = "0 6px 18px rgba(0,0,0,0.06)";
+    el.style.fontSize = "14px";
+    el.innerText = message;
+    document.body.appendChild(el);
+    setTimeout(() => {
+      try { el.style.transition = "opacity 300ms"; el.style.opacity = "0"; } catch (e) {}
+      setTimeout(() => { try { document.body.removeChild(el); } catch (e) {} }, 350);
+    }, opts.timeout || 4000);
+  }
+
+  // inside src/pages/tasks/TasksPage.jsx (fetchTasks)
+  async function fetchTasks() {
+    setLoading(true);
+    setError(null);
     try {
-      const created = await tasksApi.create(payload.projectId || projectId, payload);
-      console.log("created:", created);
-      setTasks(prev => [created, ...prev]);
-      setShowForm(false);
-      if (location.pathname.includes("/tasks/new")) navigate("/tasks", { replace: true });
+      const data = projectId ? await tasksApi.listByProject(projectId) : await tasksApi.listAll();
+      // ensure tasks is an array
+      setTasks(Array.isArray(data) ? data : (data ? [data] : []));
     } catch (err) {
-      alert(err?.message || "Failed to create task");
+      setError(err?.message || "Failed to fetch");
+    } finally {
+      setLoading(false);
     }
   }
 
+  async function handleCreate(payload) {
+    try {
+      // tasksApi.create expects (projectId, payload)
+      const created = await tasksApi.create(payload.projectId || projectId, payload);
+      setTasks((prev) => [created, ...prev]);
+      setShowForm(false);
+      showToast("Task created", { type: "info", timeout: 2500 });
+      if (location.pathname.includes("/tasks/new")) navigate("/tasks", { replace: true });
+      return created;
+    } catch (err) {
+      // replace alert with toast + rethrow so TaskForm can set inline error if it wants
+      showToast(err?.message || "Failed to create task", { type: "error", timeout: 4500 });
+      throw err;
+    }
+  }
 
   function startCreate() {
     setEditing(null);
     setShowForm(true);
-    // optionally: navigate("/tasks/new");
   }
 
   function startEdit(task) {
@@ -88,8 +187,9 @@ export default function TasksPage({ projectId = null, openCreateOnMount = false 
       setToDelete(null);
       setConfirmOpen(false);
       if (details?.id === toDelete.id) setDetails(null);
+      showToast("Task deleted", { type: "info", timeout: 2500 });
     } catch (err) {
-      alert(err?.message || "Failed to delete");
+      showToast(err?.message || "Failed to delete", { type: "error", timeout: 4500 });
     }
   }
 
@@ -99,7 +199,7 @@ export default function TasksPage({ projectId = null, openCreateOnMount = false 
       const data = await tasksApi.get(task.id);
       setDetails(data);
     } catch (err) {
-      alert("Failed to load details");
+      showToast("Failed to load details", { type: "error" });
     }
   }
 
@@ -108,6 +208,8 @@ export default function TasksPage({ projectId = null, openCreateOnMount = false 
     const q = query.toLowerCase();
     return (t.taskName || "").toLowerCase().includes(q) || (t.description || "").toLowerCase().includes(q);
   });
+
+  const modalTitle = projectId ? `Create Task — ${projectName ?? (loadingProjectName ? "Loading…" : `#${projectId}`)}` : "Create Task";
 
   return (
     <div className="p-4 sm:p-6">
@@ -146,13 +248,13 @@ export default function TasksPage({ projectId = null, openCreateOnMount = false 
             <div className="mt-2 text-sm text-gray-500">Try creating your first task or change the search</div>
           </div>
         ) : (
-          <TaskList tasks={filtered} onOpen={openDetails} onDelete={confirmDelete} />
+          <TaskList tasks={filtered} projectsMap={projectsMap} onOpen={openDetails} onDelete={confirmDelete} />
         )}
       </div>
 
       <Modal
         open={showForm}
-        title={"Create Task"}
+        title={modalTitle}
         onClose={() => {
           setShowForm(false);
           if (location.pathname.includes("/tasks/new")) navigate("/tasks", { replace: true });
@@ -177,8 +279,8 @@ export default function TasksPage({ projectId = null, openCreateOnMount = false 
             <div className="font-semibold text-lg">{details.taskName}</div>
             <div className="text-gray-700">{details.description || "No description"}</div>
 
-            <div className="text-xs text-gray-400">Created: {details.createdDt ? new Date(details.createdDt).toLocaleString() : '-'}</div>
-            <div className="text-xs text-gray-400">Updated: {details.updatedDt ? new Date(details.updatedDt).toLocaleString() : '-'}</div>
+            <div className="text-xs text-gray-400">Created: {details.createdDt ? new Date(details.createdDt).toLocaleString() : "-"}</div>
+            <div className="text-xs text-gray-400">Updated: {details.updatedDt ? new Date(details.updatedDt).toLocaleString() : "-"}</div>
 
             <div className="flex gap-2 pt-2">
               <button onClick={() => startEdit(details)} className="px-3 py-2 rounded bg-gray-100">Edit</button>

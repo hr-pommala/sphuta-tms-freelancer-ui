@@ -242,7 +242,7 @@ export default function ManageUsers() {
                         <option value="" disabled>
                           Select Action
                         </option>
-                        <option value="edit">✏️ Edit (PUT)</option>
+                        <option value="edit">✏️ Edit </option>
                         <option value="delete">🗑️ Delete</option>
                       </select>
                     </td>
