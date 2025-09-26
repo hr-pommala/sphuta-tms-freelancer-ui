@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { FaPlus, FaDownload, FaSlidersH, FaSearch } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import * as clientsApi from "../../api/clients"; // your lightweight clients API wrapper
 
 /* ---------- static options ---------- */
@@ -242,7 +242,7 @@ export default function ListClients() {
   });
 
   /* ---------- download excel ---------- */
-  const downloadExcel = () => {
+  const downloadExcel = async () => {
     const data = filtered.length ? filtered : list;
     if (!data.length) {
       pushToast({ kind: "info", text: "No client records to download." });
@@ -264,10 +264,21 @@ export default function ListClients() {
     });
 
     const fieldsToInclude = FIELD_OPTIONS.filter((f) => selectedFields[f]);
-    const ws = XLSX.utils.json_to_sheet(rows, { header: fieldsToInclude });
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Clients");
-    XLSX.writeFile(wb, `Clients_${activeTab}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Clients");
+    worksheet.columns = fieldsToInclude.map((field) => ({ header: field, key: field }));
+    rows.forEach((row) => worksheet.addRow(row));
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Clients_${activeTab}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
     setShowFilterPopup(false);
     pushToast({ kind: "success", text: "Exported clients" });
   };
@@ -449,7 +460,7 @@ export default function ListClients() {
                         ) : (
                           <>
                             <option value="edit">✏️ Edit Client</option>
-                            <option value="unarchive">↩️ Unarchive</option>
+                            <option value="unarchive">��️ Unarchive</option>
                             <option value="delete">🗑️ Delete</option>
                           </>
                         )}
@@ -545,4 +556,3 @@ export default function ListClients() {
     </div>
   );
 }
- 
