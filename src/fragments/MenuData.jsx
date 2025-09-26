@@ -5,7 +5,7 @@ export const menuData = [
   {
     name: "Dashboard",
     icon: <FiGrid />,
-    component: "/",
+    component: "/dashboard",
     submenus: [
       { name: "Overview", component: "/overview" },
       { name: "Analytics", component: "/analytics" },
