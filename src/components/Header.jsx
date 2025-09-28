@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import menuData from "../json/menuData.json";
 import logo from "../assets/logo.jpeg";
+import NotificationBell from "./NotificationBell";
 
 const Header = () => {
   const [activeSubmenu, setActiveSubmenu] = useState(null);
@@ -86,13 +87,15 @@ const Header = () => {
             alt="Company Logo"
             className="h-10 w-auto sm:h-12 md:h-14 lg:h-16 object-contain"
           />
-
       </div>
-
       {/* Horizontal Menu */}
       <nav>
         <ul className="flex space-x-4">{renderMenu(menuData)}</ul>
       </nav>
+      {/* Notification Bell */}
+      <div className="ml-4">
+        <NotificationBell />
+      </div>
     </header>
   );
 };

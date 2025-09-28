@@ -1,10 +1,9 @@
+// src/pages/clients/ListClients.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { FaPlus, FaDownload, FaSlidersH, FaSearch } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import * as XLSX from "xlsx";
-
-const API_BASE = `${import.meta.env.VITE_API_BASE}/clients`;
+import ExcelJS from "exceljs";
+import * as clientsApi from "../../api/clients"; // your lightweight clients API wrapper
 
 /* ---------- static options ---------- */
 const FIELD_OPTIONS = [
@@ -55,6 +54,24 @@ const dedupeById = (arr) => {
   });
 };
 
+// Defensive extractor for variable response shapes
+const extractArray = (res) => {
+  // res is an axios response or maybe undefined
+  if (!res) return [];
+  const d = res.data ?? null;
+  if (!d) return [];
+  // Common shapes:
+  // 1) { data: { content: [...] } }  -> res.data.data.content
+  // 2) { data: [...] }               -> res.data.data
+  // 3) { content: [...] }            -> res.data.content
+  // 4) [ ... ]                       -> res.data (array)
+  if (Array.isArray(d)) return d;
+  if (Array.isArray(d.data)) return d.data;
+  if (Array.isArray(d.content)) return d.content;
+  if (d.data && Array.isArray(d.data?.content)) return d.data.content;
+  return [];
+};
+
 /* ---------- component ---------- */
 export default function ListClients() {
   const navigate = useNavigate();
@@ -82,17 +99,18 @@ export default function ListClients() {
   const [toDeleteId, setToDeleteId] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  // fetch clients
+  // ---------- fetch clients ----------
   const fetchClients = async () => {
     setLoading(true);
     try {
+      // use the clientsApi wrapper which returns raw axios promises
       const [resActive, resArchived] = await Promise.all([
-        axios.get(API_BASE, { params: { active: true, search, page: 0, size: 200 } }),
-        axios.get(API_BASE, { params: { active: false, search, page: 0, size: 200 } }),
+        clientsApi.listClients({ active: true, search, page: 0, size: 200 }),
+        clientsApi.listClients({ active: false, search, page: 0, size: 200 }),
       ]);
 
-      const rawActive = Array.isArray(resActive?.data?.data) ? resActive.data.data : [];
-      const rawArchived = Array.isArray(resArchived?.data?.data) ? resArchived.data.data : [];
+      const rawActive = extractArray(resActive);
+      const rawArchived = extractArray(resArchived);
 
       setActiveClients(dedupeById(rawActive));
       setArchivedClients(dedupeById(rawArchived));
@@ -144,24 +162,24 @@ export default function ListClients() {
   /* ---------- CRUD actions (re-used) ---------- */
   const handleArchive = async (id) => {
     try {
-      await axios.post(`${API_BASE}/${id}/archive`);
+      await clientsApi.archiveClient(id);
       pushToast({ kind: "success", text: `Archived client id=${id}` });
       await fetchClients();
     } catch (err) {
       console.error("Archive failed:", err);
-      pushToast({ kind: "error", text: err.response?.data?.message || "Archive failed" });
+      pushToast({ kind: "error", text: err?.response?.data?.message || "Archive failed" });
       throw err;
     }
   };
 
   const handleUnarchive = async (id) => {
     try {
-      await axios.post(`${API_BASE}/${id}/unarchive`);
+      await clientsApi.unarchiveClient(id);
       pushToast({ kind: "success", text: `Unarchived client id=${id}` });
       await fetchClients();
     } catch (err) {
       console.error("Unarchive failed:", err);
-      pushToast({ kind: "error", text: err.response?.data?.message || "Unarchive failed" });
+      pushToast({ kind: "error", text: err?.response?.data?.message || "Unarchive failed" });
       throw err;
     }
   };
@@ -176,7 +194,7 @@ export default function ListClients() {
     if (!toDeleteId) return;
     setDeleteLoading(true);
     try {
-      await axios.delete(`${API_BASE}/${toDeleteId}`);
+      await clientsApi.deleteClient(toDeleteId);
       pushToast({ kind: "success", text: `Deleted client id=${toDeleteId}` });
       // refresh the list
       await fetchClients();
@@ -184,7 +202,7 @@ export default function ListClients() {
       window.alert(`${toDeleteId} profile deleted`);
     } catch (err) {
       console.error("Delete failed:", err);
-      pushToast({ kind: "error", text: err.response?.data?.message || "Delete failed" });
+      pushToast({ kind: "error", text: err?.response?.data?.message || "Delete failed" });
       window.alert("Delete failed. See console for details.");
       throw err;
     } finally {
@@ -224,7 +242,7 @@ export default function ListClients() {
   });
 
   /* ---------- download excel ---------- */
-  const downloadExcel = () => {
+  const downloadExcel = async () => {
     const data = filtered.length ? filtered : list;
     if (!data.length) {
       pushToast({ kind: "info", text: "No client records to download." });
@@ -246,10 +264,21 @@ export default function ListClients() {
     });
 
     const fieldsToInclude = FIELD_OPTIONS.filter((f) => selectedFields[f]);
-    const ws = XLSX.utils.json_to_sheet(rows, { header: fieldsToInclude });
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Clients");
-    XLSX.writeFile(wb, `Clients_${activeTab}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Clients");
+    worksheet.columns = fieldsToInclude.map((field) => ({ header: field, key: field }));
+    rows.forEach((row) => worksheet.addRow(row));
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Clients_${activeTab}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
     setShowFilterPopup(false);
     pushToast({ kind: "success", text: "Exported clients" });
   };
@@ -431,7 +460,7 @@ export default function ListClients() {
                         ) : (
                           <>
                             <option value="edit">✏️ Edit Client</option>
-                            <option value="unarchive">↩️ Unarchive</option>
+                            <option value="unarchive">��️ Unarchive</option>
                             <option value="delete">🗑️ Delete</option>
                           </>
                         )}

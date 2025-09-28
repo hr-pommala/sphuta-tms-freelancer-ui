@@ -28,14 +28,14 @@ import PreferencesList from "./pages/Settings/PreferencesList";
 import PreferencesForm from "./pages/Settings/PreferencesForm";
 
 import TimesheetList from "./pages/Timesheets/TimesheetList";
-import NewTimesheet from "./pages/Timesheets/NewTimesheet"; // you already have
+import NewTimesheet from "./pages/Timesheets/NewTimesheet";
 import EditTimesheet from "./pages/Timesheets/EditTimesheet";
 
 // Time Entries (parent + nested)
 import TimeEntries from "./pages/TimeEntries/TimeEntries";
 import TimeEntriesList from "./pages/TimeEntries/TimeEntriesList";
 import NewTimeEntry from "./pages/TimeEntries/NewTimeEntry";
-
+import TimeEntryPage from "./pages/TimeEntries/TimeEntryPage";
 // Projects
 import ListProjects from "./pages/Projects/ListProjects";
 import NewProject from "./pages/Projects/NewProject";
@@ -46,79 +46,100 @@ import SettingsInvoicingList from "./pages/settings/SettingsInvoicingList";
 import SettingsInvoicingForm from "./pages/settings/SettingsInvoicingForm";
 import SettingsInvoicingView from "./pages/settings/SettingsInvoicingView";
 
-const App = () => {
+import SignInSignUp from "./pages/SignInSignUp";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
+import TasksPage from "./pages/tasks/TasksPage";
+import EditTaskPage from "./pages/tasks/EditTaskPage";
+
+const App = () => {
   return (
     <Router>
       <Routes>
+        {/* Public routes (no Layout) */}
+        <Route path="/" element={<SignInSignUp />} />
+        <Route path="/forgot" element={<ForgotPassword />} />
+        <Route path="/reset" element={<ResetPassword />} />
+
+        {/* Protected area inside Layout */}
         <Route path="/" element={<Layout />}>
-          <Route index element={<Dashboard />} />
+          <Route path="dashboard" element={<Dashboard />} />
           <Route path="overview" element={<Overview />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="reports" element={<Reports />} />
-           <Route path="settings" element={<Settings />} />
-           <Route path="messages" element={<Messages />} />
+          <Route path="settings" element={<Settings />} />
+          <Route path="messages" element={<Messages />} />
 
-          {/* Settings Invoicing routes (consistent param name :userId) */}
+          {/* Settings Invoicing routes */}
           <Route path="settings/invoicing" element={<SettingsInvoicingList />} />
           <Route path="settings/invoicing/new" element={<SettingsInvoicingForm />} />
           <Route path="settings/invoicing/view/:userId" element={<SettingsInvoicingView />} />
           <Route path="settings/invoicing/edit/:userId" element={<SettingsInvoicingForm />} />
 
-           {/* Settings Profile Management */}
-           <Route path="settings/profile" element={<SettingsProfileList />} />
-           <Route path="settings/profile/new" element={<SettingsProfileForm />} />
-           <Route path="settings/profile/:id" element={<SettingsProfileView />} />
-           <Route path="settings/profile/:id/edit" element={<SettingsProfileForm />} />
+          {/* Settings Profile Management */}
+          <Route path="settings/profile" element={<SettingsProfileList />} />
+          <Route path="settings/profile/new" element={<SettingsProfileForm />} />
+          <Route path="settings/profile/:id" element={<SettingsProfileView />} />
+          <Route path="settings/profile/:id/edit" element={<SettingsProfileForm />} />
 
-           {/*users */}
-           <Route path="users" element={<Navigate to="/users/manage" replace />} />
-           <Route path="users/add" element={<AddUser />} />
-           <Route path="users/manage" element={<ManageUsers />} />
-           <Route path="users/:id/edit" element={<EditUser />} />
+          {/* Users */}
+          <Route path="users" element={<Navigate to="/users/manage" replace />} />
+          <Route path="users/add" element={<AddUser />} />
+          <Route path="users/manage" element={<ManageUsers />} />
+          <Route path="users/:id/edit" element={<EditUser />} />
 
-           {/* Clients */}
-           <Route path="clients/list" element={<ListClients />} />
-           <Route path="clients/new" element={<NewClient />} />
-           <Route path="clients" element={<ListClients />} />
-           <Route path="clients/new" element={<NewClient />} />
-           <Route path="clients/edit/:id" element={<NewClient />} />
+          {/* Clients */}
+          <Route path="clients/list" element={<ListClients />} />
+          <Route path="clients/new" element={<NewClient />} />
+          <Route path="clients" element={<ListClients />} />
+          <Route path="clients/edit/:id" element={<NewClient />} />
 
-            {/* Projects */}
-            <Route path="projects" element={<ListProjects />} />
-            <Route path="projects/list" element={<Navigate to="/projects" replace />} />
-            <Route path="projects/new" element={<NewProject />} />
-            <Route path="projects/edit/:id" element={<EditProject />} />
 
-            {/* Timesheets (kept as before) */}
-            <Route path="timesheets" element={<TimesheetList />} />
-            <Route path="timesheets/new" element={<NewTimesheet />} />
-            <Route path="timesheets/:id" element={<EditTimesheet />} />
+          {/* Projects */}
+          <Route path="projects" element={<ListProjects />} />
+          <Route path="projects/list" element={<Navigate to="/projects" replace />} />
+          <Route path="projects/new" element={<NewProject />} />
+          <Route path="projects/edit/:id" element={<EditProject />} />
 
-            {/* Time Entries: parent page with nested routes (list + new) */}
-            <Route path="time-entries" element={<TimeEntries />}>
-              <Route index element={<TimeEntriesList />} />
-              <Route path="new" element={<NewTimeEntry />} />
-            </Route>
+          {/* Timesheets */}
+          <Route path="timesheets" element={<TimesheetList />} />
+          <Route path="timesheets/new" element={<NewTimesheet />} />
+          <Route path="timesheets/:id" element={<EditTimesheet />} />
 
-            {/* Settings hub: PreferencesPage contains an <Outlet /> */}
-                      <Route path="settings" element={<PreferencesPage />}>
-                        <Route
-                          index
-                          element={
-                            <div className="p-4">
-                              Pick an action from Settings (Preferences, General, Security).
-                            </div>
-                          }
-                        />
-                        <Route path="preferences" element={<PreferencesList />} />
-                        <Route path="preferences/new" element={<PreferencesForm />} />
-                        <Route path="preferences/:userId" element={<PreferencesForm />} />
-                        <Route path="preferences/:userId/edit" element={<PreferencesForm />} />
-                        <Route path="preferences/:userId/patch" element={<PreferencesForm />} />
-                      </Route>
+          {/* Time Entries */}
+          <Route path="time-entries" element={<TimeEntries />}>
+            <Route index element={<TimeEntriesList />} />
+            <Route path="new" element={<NewTimeEntry />} />
+            <Route path="bulk" element={<TimeEntryPage />} />
 
+          </Route>
+
+            <Route path="/tasks" element={<TasksPage />} />
+            <Route path="/tasks/new" element={<TasksPage />} />
+            <Route path="/tasks/:id/edit" element={<EditTaskPage />} />
+
+
+          {/* Settings hub with Preferences */}
+          <Route path="settings" element={<PreferencesPage />}>
+            <Route
+              index
+              element={
+                <div className="p-4">
+                  Pick an action from Settings (Preferences, General, Security).
+                </div>
+              }
+            />
+            <Route path="preferences" element={<PreferencesList />} />
+            <Route path="preferences/new" element={<PreferencesForm />} />
+            <Route path="preferences/:userId" element={<PreferencesForm />} />
+            <Route path="preferences/:userId/edit" element={<PreferencesForm />} />
+            <Route path="preferences/:userId/patch" element={<PreferencesForm />} />
+          </Route>
         </Route>
+
+        {/* Catch-all route */}
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
   );

@@ -62,7 +62,7 @@ const TimesheetList = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [banner, setBanner] = useState(null); // { type: 'success'|'error', text }
+  const [banner, setBanner] = useState(null);
   const navigate = useNavigate();
 
   const load = async () => {
@@ -70,7 +70,19 @@ const TimesheetList = () => {
       setLoading(true);
       const res = await listTimesheets();
       const data = res?.data?.data ?? res?.data ?? res;
-      setItems(Array.isArray(data) ? data : []);
+      const arr = Array.isArray(data) ? data : [];
+      // normalize shape: ensure each has .timesheetId
+      const normalized = arr.map(t => ({
+        timesheetId: t.timesheetId ?? t.id ?? null,
+        projectName: t.projectName ?? t.project?.name ?? t.projectId ?? "-",
+        periodStart: t.periodStart ?? t.startDate ?? "",
+        periodEnd: t.periodEnd ?? t.endDate ?? "",
+        status: t.status ?? "UNKNOWN",
+        entries: t.entries ?? [],
+        totalHours: t.totalHours ?? null,
+        __raw: t,
+      }));
+      setItems(normalized);
     } catch (err) {
       console.error("Failed to load timesheets", err);
       setItems([]);
@@ -103,7 +115,6 @@ const TimesheetList = () => {
       setBanner({ type: "success", text: "Timesheet deleted successfully." });
       setModalOpen(false);
       setDeletingId(null);
-      // reload list
       await load();
     } catch (err) {
       console.error("Delete failed", err);
@@ -126,7 +137,6 @@ const TimesheetList = () => {
         </button>
       </div>
 
-      {/* Banner for success / error feedback */}
       <Banner
         message={banner?.text}
         type={banner?.type}
@@ -156,11 +166,11 @@ const TimesheetList = () => {
               {items.map((t) => (
                 <tr key={t.timesheetId} className="border-t">
                   <td className="px-4 py-2">{t.timesheetId}</td>
-                  <td className="px-4 py-2">{t.projectName ?? t.projectId}</td>
-                  <td className="px-4 py-2">{t.periodStart ?? ""}</td>
-                  <td className="px-4 py-2">{t.periodEnd ?? ""}</td>
+                  <td className="px-4 py-2">{t.projectName}</td>
+                  <td className="px-4 py-2">{t.periodStart}</td>
+                  <td className="px-4 py-2">{t.periodEnd}</td>
                   <td className="px-4 py-2">{t.status}</td>
-                  <td className="px-4 py-2">{t.entries ? t.entries.length : 0}</td>
+                  <td className="px-4 py-2">{t.entries.length}</td>
                   <td className="px-4 py-2">{t.totalHours ?? "-"}</td>
                   <td className="px-4 py-2 space-x-2">
                     <button
@@ -177,7 +187,6 @@ const TimesheetList = () => {
         </div>
       )}
 
-      {/* Confirm modal */}
       <ConfirmModal
         open={modalOpen}
         title="Confirm delete"
