@@ -3,6 +3,7 @@ import { Outlet } from "react-router-dom";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
 import Footer from "./Footer";
+import DynamicTitle from "../components/DynamicTitle";
 
 const Layout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -13,10 +14,11 @@ const Layout = () => {
   return (
     <div className={`flex h-screen ${isDarkMode ? "dark" : ""}`}>
       {/* Sidebar */}
-      <Sidebar isSidebarOpen={isSidebarOpen} />
+      <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
 
       {/* Main Layout */}
       <div className="flex flex-col flex-grow">
+        <DynamicTitle />
         {/* Header */}
         <Header
           toggleSidebar={toggleSidebar}

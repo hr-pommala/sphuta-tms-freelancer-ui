@@ -4,8 +4,8 @@ import {
   CheckCircleIcon,
   FilterIcon,
   TrashIcon,
-  CogIcon as Cog6ToothIcon,
-  XIcon as XMarkIcon,
+  CogIcon,
+  XIcon,
 } from "@heroicons/react/outline";
 import {
   fetchNotifications,
@@ -41,7 +41,7 @@ const NotificationBell = () => {
           message: n.notification_description,
           time: new Date(n.createdAt || Date.now()).toLocaleString(),
           read: n.is_read,
-          icon: <CheckCircleIcon className="h-6 w-6 text-blue-500" />,
+          icon: <CheckCircleIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />,
         }));
         setNotifications(mapped);
       } catch (err) {
@@ -94,13 +94,13 @@ const NotificationBell = () => {
   return (
     <div className="relative inline-block text-left">
       <button
-        className="relative p-2 rounded-full hover:bg-gray-100 focus:outline-none"
+        className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none"
         onClick={() => setOpen((o) => !o)}
         aria-label="Show notifications"
       >
-        <BellIcon className="h-7 w-7 text-gray-700" />
+        <BellIcon className="h-7 w-7 text-gray-700 dark:text-gray-200" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full px-1.5 py-0.5 font-semibold">
+          <span className="absolute -top-1 -right-1 bg-blue-600 dark:bg-blue-400 text-white text-xs rounded-full px-1.5 py-0.5 font-semibold">
             {unreadCount}
           </span>
         )}
@@ -110,7 +110,7 @@ const NotificationBell = () => {
           {/* Header with icons */}
           <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100 bg-gray-50 rounded-t-xl">
             <div className="flex items-center gap-2">
-              <BellIcon className="h-5 w-5 text-blue-600" />
+              <BellIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               <span className="font-semibold text-gray-800 text-lg">
                 Notifications
               </span>
@@ -121,28 +121,28 @@ const NotificationBell = () => {
                 onClick={() => setShowFilter((v) => !v)}
                 aria-label="Filter notifications"
               >
-                <FilterIcon className="h-5 w-5 text-gray-500" />
+                <FilterIcon className="h-5 w-5 text-gray-500 dark:text-gray-300" />
               </button>
               <button
                 className="p-1 hover:bg-gray-200 rounded"
                 onClick={handleDeleteAll}
                 aria-label="Delete all notifications"
               >
-                <TrashIcon className="h-5 w-5 text-gray-500" />
+                <TrashIcon className="h-5 w-5 text-gray-500 dark:text-gray-300" />
               </button>
               <button
                 className="p-1 hover:bg-gray-200 rounded"
                 onClick={() => setShowSettings(true)}
                 aria-label="Notification settings"
               >
-                <Cog6ToothIcon className="h-5 w-5 text-gray-500" />
+                <CogIcon className="h-5 w-5 text-gray-500 dark:text-gray-300" />
               </button>
               <button
                 className="p-1 hover:bg-gray-200 rounded"
                 onClick={() => setOpen(false)}
                 aria-label="Close notifications"
               >
-                <XMarkIcon className="h-5 w-5 text-gray-500" />
+                <XIcon className="h-5 w-5 text-gray-500 dark:text-gray-300" />
               </button>
             </div>
           </div>
@@ -217,7 +217,7 @@ const NotificationBell = () => {
                   onClick={() => setShowSettings(false)}
                   aria-label="Close settings"
                 >
-                  <XMarkIcon className="h-5 w-5 text-gray-500" />
+                  <XIcon className="h-5 w-5 text-gray-500 dark:text-gray-300" />
                 </button>
                 <h2 className="text-lg font-semibold mb-4">
                   Notification Settings

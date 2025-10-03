@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { menuData } from "./MenuData";
+import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 
-const Sidebar = ({ isSidebarOpen }) => {
+const Sidebar = ({ isSidebarOpen, toggleSidebar }) => {
   const [activeMenu, setActiveMenu] = useState(null);
   const [hoverTimeout, setHoverTimeout] = useState(null); // To handle delayed submenu hiding
   const [searchQuery, setSearchQuery] = useState("");
@@ -60,8 +61,24 @@ const Sidebar = ({ isSidebarOpen }) => {
   return (
     <aside
       ref={sidebarRef}
-      className={`h-screen fixed top-0 left-0 z-50 transition-all duration-300 ${sidebarWidth} bg-blue-600 dark:bg-gray-900 text-white shadow-lg`}
+      className={`fixed top-0 left-0 h-screen bg-[#1768ac] dark:bg-[#232946] border-r border-slate-200 dark:border-slate-700 flex flex-col transition-all duration-200 z-50 ${sidebarWidth}`}
+      style={{ minWidth: isSidebarOpen ? "14rem" : "4rem" }}
     >
+      {/* Toggle button at top-right */}
+      <div className="flex justify-end items-center p-2">
+        <button
+          onClick={toggleSidebar}
+          className="text-white bg-[#1768ac] hover:bg-[#145a8a] rounded-full p-1 focus:outline-none border border-white shadow"
+          aria-label={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+        >
+          {isSidebarOpen ? (
+            <FiChevronLeft size={22} />
+          ) : (
+            <FiChevronRight size={22} />
+          )}
+        </button>
+      </div>
+
       {/* Search Bar */}
       <div className="p-4">
         {isSidebarOpen && (
