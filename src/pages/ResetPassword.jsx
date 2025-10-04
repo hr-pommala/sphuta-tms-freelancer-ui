@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { resetPassword } from "../api/authApi";
+import { encryptPassword } from "../api/encrypt";
 
 const ResetPassword = () => {
   const [form, setForm] = useState({});
@@ -27,7 +28,11 @@ const ResetPassword = () => {
       return setMsg("Email required");
     }
 
-    const res = await resetPassword(email, form.password, form.confirmPassword);
+    // Encrypt passwords before sending
+    const encryptedPassword = await encryptPassword(form.password);
+    const encryptedConfirmPassword = await encryptPassword(form.confirmPassword);
+
+    const res = await resetPassword(email, encryptedPassword, encryptedConfirmPassword);
     if (res.success) {
       setMsg(res.message || "Password updated");
       setIsSuccess(true);
@@ -104,4 +109,3 @@ const ResetPassword = () => {
 };
 
 export default ResetPassword;
- 

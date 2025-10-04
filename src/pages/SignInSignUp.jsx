@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { login, signup } from "../api/authApi";
+import { encryptPassword } from "../api/encrypt";
 import ctd from "country-telephone-data"; // ensure this package is installed
 
 const SignInSignUp = () => {
@@ -94,7 +95,8 @@ const SignInSignUp = () => {
     setError("");
     setSuccess("");
     try {
-      const res = await login(form.email, form.password);
+      const encryptedPassword = await encryptPassword(form.password);
+      const res = await login(form.email, encryptedPassword);
       if (res.success) {
         navigate("/dashboard");
       } else {
@@ -137,12 +139,16 @@ const SignInSignUp = () => {
     const dialCode = meta && meta.dialCode ? Number(meta.dialCode) : Number(91);
     const dialCodeWithSymbol = `+${String(dialCode)}`;
 
+    // Encrypt passwords before sending
+    const encryptedPassword = await encryptPassword(form.password);
+    const encryptedConfirmPassword = await encryptPassword(form.confirmPassword);
+
     const payload = {
       firstName: form.firstName,
       lastName: form.lastName,
       email: form.email,
-      password: form.password,
-      confirmPassword: form.confirmPassword,
+      password: encryptedPassword,
+      confirmPassword: encryptedConfirmPassword,
       phone: form.phone,
       countryCode: dialCode,
       countryCodeWithSymbol: dialCodeWithSymbol,
