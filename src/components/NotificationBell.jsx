@@ -1,39 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   BellIcon,
   CheckCircleIcon,
   FilterIcon,
   TrashIcon,
-  CogIcon as Cog6ToothIcon,
-  XIcon as XMarkIcon,
+  CogIcon,
+  XIcon,
 } from "@heroicons/react/outline";
-
-const initialNotifications = [
-  {
-    id: 1,
-    title: "Invoice Paid",
-    message: "Your invoice #1234 has been paid.",
-    time: "2 min ago",
-    read: false,
-    icon: <CheckCircleIcon className="h-6 w-6 text-blue-500" />,
-  },
-  {
-    id: 2,
-    title: "New Client",
-    message: "A new client has registered.",
-    time: "10 min ago",
-    read: false,
-    icon: <CheckCircleIcon className="h-6 w-6 text-green-500" />,
-  },
-  {
-    id: 3,
-    title: "Invoice Overdue",
-    message: "Invoice #1220 is overdue.",
-    time: "1 hour ago",
-    read: true,
-    icon: <CheckCircleIcon className="h-6 w-6 text-yellow-500" />,
-  },
-];
+import {
+  fetchNotifications,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+} from "../api/notifications";
 
 const filterOptions = [
   { label: "All", value: "all" },
@@ -43,24 +21,56 @@ const filterOptions = [
 
 const NotificationBell = () => {
   const [open, setOpen] = useState(false);
-  const [notifications, setNotifications] = useState(initialNotifications);
+  const [notifications, setNotifications] = useState([]);
   const [filter, setFilter] = useState("all");
   const [showFilter, setShowFilter] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [emailNotif, setEmailNotif] = useState(true);
   const [pushNotif, setPushNotif] = useState(true);
   const [soundNotif, setSoundNotif] = useState(false);
+  const userId = JSON.parse(localStorage.getItem("user")).id;
+
+  useEffect(() => {
+    const loadNotifications = async () => {
+      try {
+        const data = await fetchNotifications(userId);
+        // Map backend response into UI-friendly format
+        const mapped = data.map((n) => ({
+          id: n.id,
+          title: n.title,
+          message: n.notification_description,
+          time: new Date(n.createdAt || Date.now()).toLocaleString(),
+          read: n.is_read,
+          icon: <CheckCircleIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />,
+        }));
+        setNotifications(mapped);
+      } catch (err) {
+        console.error("Failed to load notifications", err);
+      }
+    };
+    loadNotifications();
+  }, [userId]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  const handleMarkAsRead = (id) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-    );
+  const handleMarkAsRead = async (id) => {
+    try {
+      await markNotificationAsRead(id);
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+      );
+    } catch (err) {
+      console.error("Error marking notification as read", err);
+    }
   };
 
-  const handleMarkAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  const handleMarkAllAsRead = async () => {
+    try {
+      await markAllNotificationsAsRead();
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    } catch (err) {
+      console.error("Error marking all as read", err);
+    }
   };
 
   const handleDeleteAll = () => {
@@ -84,13 +94,13 @@ const NotificationBell = () => {
   return (
     <div className="relative inline-block text-left">
       <button
-        className="relative p-2 rounded-full hover:bg-gray-100 focus:outline-none"
+        className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none"
         onClick={() => setOpen((o) => !o)}
         aria-label="Show notifications"
       >
-        <BellIcon className="h-7 w-7 text-gray-700" />
+        <BellIcon className="h-7 w-7 text-gray-700 dark:text-gray-200" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full px-1.5 py-0.5 font-semibold">
+          <span className="absolute -top-1 -right-1 bg-blue-600 dark:bg-blue-400 text-white text-xs rounded-full px-1.5 py-0.5 font-semibold">
             {unreadCount}
           </span>
         )}
@@ -100,46 +110,43 @@ const NotificationBell = () => {
           {/* Header with icons */}
           <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100 bg-gray-50 rounded-t-xl">
             <div className="flex items-center gap-2">
-              <BellIcon className="h-5 w-5 text-blue-600" />
+              <BellIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               <span className="font-semibold text-gray-800 text-lg">
                 Notifications
               </span>
             </div>
             <div className="flex items-center gap-2">
-              {/* Filter icon */}
               <button
                 className="p-1 hover:bg-gray-200 rounded"
                 onClick={() => setShowFilter((v) => !v)}
                 aria-label="Filter notifications"
               >
-                <FilterIcon className="h-5 w-5 text-gray-500" />
+                <FilterIcon className="h-5 w-5 text-gray-500 dark:text-gray-300" />
               </button>
-              {/* Delete icon */}
               <button
                 className="p-1 hover:bg-gray-200 rounded"
                 onClick={handleDeleteAll}
                 aria-label="Delete all notifications"
               >
-                <TrashIcon className="h-5 w-5 text-gray-500" />
+                <TrashIcon className="h-5 w-5 text-gray-500 dark:text-gray-300" />
               </button>
-              {/* Settings icon */}
               <button
                 className="p-1 hover:bg-gray-200 rounded"
                 onClick={() => setShowSettings(true)}
                 aria-label="Notification settings"
               >
-                <Cog6ToothIcon className="h-5 w-5 text-gray-500" />
+                <CogIcon className="h-5 w-5 text-gray-500 dark:text-gray-300" />
               </button>
-              {/* Close icon */}
               <button
                 className="p-1 hover:bg-gray-200 rounded"
                 onClick={() => setOpen(false)}
                 aria-label="Close notifications"
               >
-                <XMarkIcon className="h-5 w-5 text-gray-500" />
+                <XIcon className="h-5 w-5 text-gray-500 dark:text-gray-300" />
               </button>
             </div>
           </div>
+
           {/* Filter dropdown */}
           {showFilter && (
             <div className="absolute right-16 top-12 bg-white border border-gray-200 rounded shadow-md z-50 w-32">
@@ -158,6 +165,7 @@ const NotificationBell = () => {
               ))}
             </div>
           )}
+
           {/* Mark all as read */}
           <div className="px-4 py-2 border-b border-gray-100 bg-white flex justify-end">
             <button
@@ -168,10 +176,13 @@ const NotificationBell = () => {
               Mark all as read
             </button>
           </div>
+
           {/* Notification list */}
           <div className="max-h-80 overflow-y-auto">
             {filteredNotifications.length === 0 ? (
-              <div className="p-6 text-center text-gray-400">No notifications</div>
+              <div className="p-6 text-center text-gray-400">
+                No notifications
+              </div>
             ) : (
               filteredNotifications.map((n) => (
                 <button
@@ -196,7 +207,8 @@ const NotificationBell = () => {
               ))
             )}
           </div>
-          {/* Settings Modal */}
+
+          {/* Settings Modal (unchanged) */}
           {showSettings && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
               <div className="bg-white rounded-lg shadow-xl p-6 w-96 relative">
@@ -205,16 +217,16 @@ const NotificationBell = () => {
                   onClick={() => setShowSettings(false)}
                   aria-label="Close settings"
                 >
-                  <XMarkIcon className="h-5 w-5 text-gray-500" />
+                  <XIcon className="h-5 w-5 text-gray-500 dark:text-gray-300" />
                 </button>
                 <h2 className="text-lg font-semibold mb-4">
                   Notification Settings
                 </h2>
+                {/* Settings checkboxes */}
                 <div className="mb-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-gray-800">Email Notifications</span>
                     <input
-                      id="emailNotif"
                       type="checkbox"
                       checked={emailNotif}
                       onChange={() => setEmailNotif((v) => !v)}
@@ -224,7 +236,6 @@ const NotificationBell = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-gray-800">Push Notifications</span>
                     <input
-                      id="pushNotif"
                       type="checkbox"
                       checked={pushNotif}
                       onChange={() => setPushNotif((v) => !v)}
@@ -234,38 +245,12 @@ const NotificationBell = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-gray-800">Sound/Vibration</span>
                     <input
-                      id="soundNotif"
                       type="checkbox"
                       checked={soundNotif}
                       onChange={() => setSoundNotif((v) => !v)}
                       className="form-checkbox h-5 w-5 text-blue-600"
                     />
                   </div>
-                </div>
-                <div className="mb-2 font-semibold text-gray-700">
-                  Recent Activity
-                </div>
-                <div className="max-h-32 overflow-y-auto mb-4">
-                  {notifications.length === 0 ? (
-                    <div className="text-gray-400 text-sm text-center">
-                      No recent activity
-                    </div>
-                  ) : (
-                    notifications
-                      .slice(0, 5)
-                      .map((n) => (
-                        <div
-                          key={n.id}
-                          className="flex items-center gap-2 py-1 border-b last:border-b-0 text-sm"
-                        >
-                          {n.icon}
-                          <span className="flex-1">
-                            {n.title} -{" "}
-                            <span className="text-gray-500">{n.time}</span>
-                          </span>
-                        </div>
-                      ))
-                  )}
                 </div>
                 <button
                   className="w-full py-2 mt-2 bg-red-50 hover:bg-red-100 text-red-600 rounded font-medium"

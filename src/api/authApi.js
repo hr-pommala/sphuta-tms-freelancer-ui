@@ -21,12 +21,11 @@ api.interceptors.request.use(
 const parseError = (err) => {
   if (!err) return { success: false, message: "Unknown error" };
 
-  // If there's no response but a request exists, likely network or CORS preflight blocked
   if (err.request && !err.response) {
-    // This is often a CORS/preflight or network failure
     return {
       success: false,
-      message: "Network or CORS error: browser blocked the request. Check backend CORS and server availability.",
+      message:
+        "Network or CORS error: browser blocked the request. Check backend CORS and server availability.",
       raw: err.message,
     };
   }
@@ -54,11 +53,29 @@ export const login = async (emailOrUsername, password) => {
   try {
     const res = await api.post("/auth/login", { emailOrUsername, password });
     const payload = res.data;
+
     if (payload?.token) {
+      // store header (payload.token might already be raw token)
       const header = `${payload.tokenType ?? "Bearer"} ${payload.token}`;
       localStorage.setItem("token", header);
-      localStorage.setItem("user", JSON.stringify({ fullName: payload.fullName, email: payload.email }));
+
+      // Try to find an id in multiple possible shapes returned by backend
+      const id =
+        payload.id ??
+        payload.userId ??
+        (payload.user && (payload.user.id ?? payload.user.userId)) ??
+        null;
+
+      const user = {
+        id: id,
+        fullName: payload.fullName ?? (payload.user && payload.user.fullName) ?? "",
+        email: payload.email ?? (payload.user && payload.user.email) ?? "",
+      };
+
+      // If no id present yet, we still store minimal user info (frontend will call /auth/me as fallback)
+      localStorage.setItem("user", JSON.stringify(user));
     }
+
     return { success: true, data: payload };
   } catch (err) {
     return parseError(err);
@@ -86,17 +103,14 @@ export const resetPassword = async (email, newPassword, confirmPassword) => {
 export const getMe = async () => {
   try {
     const res = await api.get("/auth/me");
+    // Expecting response data to be user object or { id, fullName, email }
     return { success: true, data: res.data };
   } catch (err) {
     return parseError(err);
   }
 };
 
-/**
- * Notify backend to revoke the current token.
- * The axios instance attaches Authorization header automatically via interceptor.
- * Returns { success: true, data } on success or the parsed error object on failure.
- */
+/** Revoke current token on backend */
 export const logoutRequest = async () => {
   try {
     const res = await api.post("/auth/logout");
@@ -106,16 +120,13 @@ export const logoutRequest = async () => {
   }
 };
 
-/**
- * Clear client-side session info. This preserves the previous behavior.
- * Use this after logoutRequest (or on its own) to remove token & user from localStorage.
- */
+/** Clear client-side session info */
 export const logout = () => {
   try {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
   } catch (e) {
-    // ignore storage errors
+    // ignore
   }
 };
 
