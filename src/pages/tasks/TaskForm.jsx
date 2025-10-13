@@ -153,7 +153,7 @@ export default function TaskForm({ initial = {}, projectId: propProjectId, onCan
                   className="mt-1 block w-full border rounded-md p-2"
                   aria-required="true"
                 >
-                  <option value="">— Select project —</option>
+                  <option value=""> Select Project</option>
                   {projects.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name}

@@ -1,24 +1,75 @@
-// src/pages/Timesheets/NewTimesheet.jsx
-import { useState } from "react";
+// src/pages/timesheets/NewTimesheet.jsx
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import DatePicker from "react-datepicker";
 import { FaRegCalendarAlt } from "react-icons/fa";
 import "react-datepicker/dist/react-datepicker.css";
-import axiosClient from "../../api/axios";
+import api from "../../api/axios";
 
 function NewTimesheet() {
   const [form, setForm] = useState({
     projectId: "",
-    // use Date objects for the date pickers
     periodStart: null,
     periodEnd: null,
   });
+  const [projects, setProjects] = useState([]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
+  const [fetchError, setFetchError] = useState(null);
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  /* ---------------------------------------
+     Load projects using TaskForm style logic
+  -----------------------------------------*/
+  async function loadProjects() {
+    setLoadingProjects(true);
+    setFetchError(null);
+    try {
+      const qs = new URLSearchParams();
+      qs.append("active", true);
+      qs.append("page", 0);
+      qs.append("size", 200);
+      const url = `/projects/projects?${qs.toString()}`;
+
+      const res = await api.get(url);
+      const candidate = res?.data?.data?.content ?? res?.data?.data ?? res?.data ?? res;
+      const list = Array.isArray(candidate) ? candidate : [];
+      const normalized = list.map((raw) => ({
+        id: raw.id ?? raw.projectId ?? raw.timesheetId,
+        name: raw.projectName ?? raw.name ?? raw.title ?? raw.code ?? `#${raw.id ?? raw.projectId}`,
+        code: raw.code ?? raw.projectCode ?? "",
+        hourlyRate: raw.hourlyRate ?? raw.rate ?? raw.hourly ?? null,
+        startDate: raw.startDate ?? raw.periodStart ?? null,
+        endDate: raw.endDate ?? raw.periodEnd ?? null,
+        isActive: raw.isActive ?? raw.active ?? true,
+        client: raw.client ?? raw.clientDto ?? null,
+        __raw: raw,
+      }));
+      setProjects(normalized);
+    } catch (err) {
+      console.error("[NewTimesheet] failed to load projects:", err);
+      setFetchError(err?.message || "Failed to load projects");
+      setProjects([]);
+    } finally {
+      setLoadingProjects(false);
+    }
+  }
+
+  useEffect(() => {
+    loadProjects();
+  }, []);
+
+  const selectedProject = useMemo(
+    () => projects.find((p) => String(p.id) === String(form.projectId)),
+    [projects, form.projectId]
+  );
+
+  /* ---------------------------------------
+     Helpers
+  -----------------------------------------*/
   const formatDate = (date) => {
     if (!date) return "";
     const y = date.getFullYear();
@@ -29,21 +80,12 @@ function NewTimesheet() {
 
   const validate = () => {
     const newErrors = {};
-
-    if (!form.projectId) newErrors.projectId = "Project ID is required";
+    if (!form.projectId) newErrors.projectId = "Project is required";
     if (!form.periodStart) newErrors.periodStart = "Period Start is required";
     if (!form.periodEnd) newErrors.periodEnd = "Period End is required";
-
-    // If both dates present, ensure end >= start
-    if (form.periodStart && form.periodEnd) {
-      // strip time portion by using midnight for comparison
-      const start = new Date(form.periodStart.getFullYear(), form.periodStart.getMonth(), form.periodStart.getDate());
-      const end = new Date(form.periodEnd.getFullYear(), form.periodEnd.getMonth(), form.periodEnd.getDate());
-      if (end < start) {
-        newErrors.periodEnd = "Period End must be greater than or equal to Period Start";
-      }
+    if (form.periodStart && form.periodEnd && form.periodEnd < form.periodStart) {
+      newErrors.periodEnd = "Period End must be after Period Start";
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -56,14 +98,16 @@ function NewTimesheet() {
     setSuccess("");
   };
 
+  /* ---------------------------------------
+     Submit
+  -----------------------------------------*/
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setApiError("");
-    setSuccess("");
-
     if (!validate()) return;
 
     setLoading(true);
+    setApiError("");
+    setSuccess("");
 
     const payload = {
       projectId: parseInt(form.projectId, 10),
@@ -72,25 +116,19 @@ function NewTimesheet() {
     };
 
     try {
-      const res = await axiosClient.post("/timesheets", payload);
-      // If using wrapped response: check res.data.data etc — adjust if needed.
+      await api.post("/timesheets", payload);
       setSuccess("✅ Timesheet created successfully!");
-      // small delay for UX then navigate to list
-      setTimeout(() => {
-        navigate("/timesheets");
-      }, 600);
+      setTimeout(() => navigate("/timesheets"), 700);
     } catch (err) {
-      const msg = err?.response?.data?.message ?? err?.message ?? "Failed to create timesheet";
+      const msg =
+        err?.response?.data?.message ??
+        err?.message ??
+        "Failed to create timesheet";
       if (msg.includes("already exists")) {
         setApiError("⚠️ A timesheet already exists for this project and period.");
-      } else if (msg.includes("periodEnd must be")) {
-        setApiError(
-          "⚠️ Period End date must be greater than or equal to Period Start date."
-        );
       } else {
         setApiError(msg);
       }
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -101,7 +139,6 @@ function NewTimesheet() {
     navigate("/timesheets");
   };
 
-  // Custom Input for DatePicker with calendar icon
   const CustomDateInput = ({ value, onClick, placeholder }) => (
     <div className="relative w-full">
       <input
@@ -110,7 +147,7 @@ function NewTimesheet() {
         value={value}
         onClick={onClick}
         placeholder={placeholder}
-        className="w-full border px-3 py-2 rounded focus:ring focus:ring-blue-300 pr-10 cursor-pointer bg-white"
+        className="w-full border px-3 py-2 rounded pr-10 cursor-pointer bg-white"
       />
       <FaRegCalendarAlt
         onClick={onClick}
@@ -119,6 +156,9 @@ function NewTimesheet() {
     </div>
   );
 
+  /* ---------------------------------------
+     Render
+  -----------------------------------------*/
   return (
     <div className="p-6 max-w-lg mx-auto bg-white shadow rounded-lg">
       <h2 className="text-2xl font-bold mb-4">Create New Timesheet</h2>
@@ -128,7 +168,6 @@ function NewTimesheet() {
           {apiError}
         </p>
       )}
-
       {success && (
         <p className="mb-3 text-green-700 font-medium bg-green-100 p-2 rounded">
           {success}
@@ -136,25 +175,56 @@ function NewTimesheet() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* --- Project Dropdown --- */}
         <div>
-          <label className="block mb-1 font-medium">Project ID</label>
-          <input
-            type="number"
-            name="projectId"
-            value={form.projectId}
-            onChange={handleChange}
-            className="w-full border px-3 py-2 rounded focus:ring focus:ring-blue-300"
-          />
+          <label className="block mb-1 font-medium">Project</label>
+
+          {loadingProjects ? (
+            <p className="text-gray-500 text-sm">Loading projects…</p>
+          ) : fetchError ? (
+            <div className="text-red-600 text-sm mt-1">
+              Failed to load projects: {fetchError}
+              <button
+                type="button"
+                onClick={loadProjects}
+                className="ml-2 px-2 py-1 text-xs border rounded bg-gray-100"
+              >
+                Retry
+              </button>
+            </div>
+          ) : projects.length === 0 ? (
+            <p className="text-gray-500 text-sm mt-1">No projects found.</p>
+          ) : (
+            <>
+              <select
+                name="projectId"
+                value={form.projectId}
+                onChange={handleChange}
+                className="w-full border px-3 py-2 rounded focus:ring focus:ring-blue-300 bg-white"
+              >
+                <option value="">Select Project</option>
+                {projects.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
+
           {errors.projectId && (
             <p className="text-red-600 text-sm mt-1">{errors.projectId}</p>
           )}
         </div>
 
+        {/* --- Period Start --- */}
         <div>
           <label className="block mb-1 font-medium">Period Start</label>
           <DatePicker
             selected={form.periodStart}
-            onChange={(date) => setForm((prev) => ({ ...prev, periodStart: date }))}
+            onChange={(date) =>
+              setForm((prev) => ({ ...prev, periodStart: date }))
+            }
             dateFormat="yyyy-MM-dd"
             placeholderText="YYYY-MM-DD"
             customInput={<CustomDateInput placeholder="YYYY-MM-DD" />}
@@ -165,11 +235,14 @@ function NewTimesheet() {
           )}
         </div>
 
+        {/* --- Period End --- */}
         <div>
           <label className="block mb-1 font-medium">Period End</label>
           <DatePicker
             selected={form.periodEnd}
-            onChange={(date) => setForm((prev) => ({ ...prev, periodEnd: date }))}
+            onChange={(date) =>
+              setForm((prev) => ({ ...prev, periodEnd: date }))
+            }
             dateFormat="yyyy-MM-dd"
             placeholderText="YYYY-MM-DD"
             customInput={<CustomDateInput placeholder="YYYY-MM-DD" />}

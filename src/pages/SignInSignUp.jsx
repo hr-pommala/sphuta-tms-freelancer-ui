@@ -79,8 +79,14 @@ const SignInSignUp = () => {
     } else if (name === "countryCode") {
       const newIso2 = (value || "").toUpperCase();
       const { maxLen } = derivePhoneLengths(newIso2);
-      const existingDigits = (form.phone || "").replace(/\D/g, "").slice(0, maxLen);
-      setForm((prev) => ({ ...prev, countryCode: newIso2, phone: existingDigits }));
+      const existingDigits = (form.phone || "")
+        .replace(/\D/g, "")
+        .slice(0, maxLen);
+      setForm((prev) => ({
+        ...prev,
+        countryCode: newIso2,
+        phone: existingDigits,
+      }));
     } else {
       setForm((prev) => ({ ...prev, [name]: value }));
     }
@@ -89,7 +95,6 @@ const SignInSignUp = () => {
   const validatePassword = (password) =>
     /^(?=.*[A-Z])(?=.*[0-9])(?=.*[@$!%*?&]).{8,}$/.test(password);
 
-  // ✅ Sign In now uses email
   const handleSignIn = async (e) => {
     e.preventDefault();
     setError("");
@@ -113,7 +118,9 @@ const SignInSignUp = () => {
     setSuccess("");
 
     if (!validatePassword(form.password)) {
-      setError("Password must be strong (8+ chars, include uppercase, number and special character)");
+      setError(
+        "Password must be strong (8+ chars, include uppercase, number and special character)"
+      );
       return;
     }
     if (form.password !== form.confirmPassword) {
@@ -127,11 +134,15 @@ const SignInSignUp = () => {
 
     if (lengths && Array.isArray(lengths)) {
       if (!lengths.includes(phoneDigits.length)) {
-        setError(`Mobile number must be ${lengths.join(" or ")} digits for ${iso2} (entered ${phoneDigits.length})`);
+        setError(
+          `Mobile number must be ${lengths.join(" or ")} digits for ${iso2} (entered ${phoneDigits.length})`
+        );
         return;
       }
     } else if (phoneDigits.length !== maxLen) {
-      setError(`Mobile number must be exactly ${maxLen} digits for ${iso2} (entered ${phoneDigits.length})`);
+      setError(
+        `Mobile number must be exactly ${maxLen} digits for ${iso2} (entered ${phoneDigits.length})`
+      );
       return;
     }
 
@@ -139,9 +150,10 @@ const SignInSignUp = () => {
     const dialCode = meta && meta.dialCode ? Number(meta.dialCode) : Number(91);
     const dialCodeWithSymbol = `+${String(dialCode)}`;
 
-    // Encrypt passwords before sending
     const encryptedPassword = await encryptPassword(form.password);
-    const encryptedConfirmPassword = await encryptPassword(form.confirmPassword);
+    const encryptedConfirmPassword = await encryptPassword(
+      form.confirmPassword
+    );
 
     const payload = {
       firstName: form.firstName,
@@ -160,7 +172,6 @@ const SignInSignUp = () => {
       setLoading(false);
 
       if (res.success) {
-        // keep success message but remain on signup form (user will click Sign In manually)
         setSuccess("Account created successfully. Please sign in.");
         setError("");
         setForm({});
@@ -178,10 +189,13 @@ const SignInSignUp = () => {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-600 to-blue-700 p-6">
       <div className="bg-white shadow-xl rounded-2xl p-8 w-full max-w-md">
+        {/* Tabs */}
         <div className="flex rounded-t-lg overflow-hidden mb-6">
           <button
             className={`flex-1 py-3 text-center font-semibold ${
-              activeTab === "signin" ? "bg-gray-100 text-gray-800" : "bg-transparent text-gray-500"
+              activeTab === "signin"
+                ? "bg-gray-100 text-gray-800"
+                : "bg-transparent text-gray-500"
             }`}
             onClick={() => {
               setActiveTab("signin");
@@ -191,10 +205,11 @@ const SignInSignUp = () => {
           >
             Sign In
           </button>
-
           <button
             className={`flex-1 py-3 text-center font-semibold ${
-              activeTab === "signup" ? "bg-indigo-600 text-white" : "bg-transparent text-gray-500"
+              activeTab === "signup"
+                ? "bg-indigo-600 text-white"
+                : "bg-transparent text-gray-500"
             }`}
             onClick={() => {
               setActiveTab("signup");
@@ -206,13 +221,14 @@ const SignInSignUp = () => {
           </button>
         </div>
 
+        {/* Sign In */}
         {activeTab === "signin" ? (
           <form onSubmit={handleSignIn}>
-            {/* ✅ Now explicitly email for sign in */}
             <input
               type="email"
               name="email"
               placeholder="EMAIL"
+              value={form.email || ""}
               className="w-full mb-3 border border-gray-200 p-3 rounded bg-gray-50 placeholder-gray-500"
               onChange={handleChange}
               required
@@ -221,52 +237,96 @@ const SignInSignUp = () => {
               type="password"
               name="password"
               placeholder="PASSWORD"
+              value={form.password || ""}
               className="w-full mb-3 border border-gray-200 p-3 rounded bg-gray-50 placeholder-gray-500"
               onChange={handleChange}
               required
             />
-            <button type="submit" className="w-full bg-indigo-600 text-white py-3 rounded font-medium shadow-sm">
+            <button
+              type="submit"
+              className="w-full bg-indigo-600 text-white py-3 rounded font-medium shadow-sm"
+            >
               LOGIN
             </button>
             <div className="text-right mt-3">
-              <Link to="/forgot" className="text-sm text-gray-800 hover:text-gray-900">
+              <Link
+                to="/forgot"
+                className="text-sm text-gray-800 hover:text-gray-900"
+              >
                 Forgot password?
               </Link>
             </div>
-
             {error && <p className="text-red-500 mt-3 text-sm">{error}</p>}
             {success && <p className="text-green-600 mt-3 text-sm">{success}</p>}
           </form>
         ) : (
-          // Always show the signup form and display success message inline (no auto navigation)
+          /* Sign Up */
           <form onSubmit={handleSignUp}>
-            {/* If signup succeeded, show the success message above the form */}
-            {success && <p className="text-green-600 text-center font-medium mb-4">{success}</p>}
+            {success && (
+              <p className="text-green-600 text-center font-medium mb-4">
+                {success}
+              </p>
+            )}
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              Create account
+            </h2>
 
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Create account</h2>
-
+            {/* Name */}
             <div className="grid grid-cols-2 gap-3 mb-3">
-              <input type="text" name="firstName" placeholder="First name" className="px-3 py-3 rounded bg-slate-100 border border-transparent" onChange={handleChange} required />
-              <input type="text" name="lastName" placeholder="Last name" className="px-3 py-3 rounded bg-slate-100 border border-transparent" onChange={handleChange} required />
+              <input
+                type="text"
+                name="firstName"
+                placeholder="First name"
+                value={form.firstName || ""}
+                onChange={handleChange}
+                className="px-3 py-3 rounded bg-slate-100 border border-transparent"
+                required
+              />
+              <input
+                type="text"
+                name="lastName"
+                placeholder="Last name"
+                value={form.lastName || ""}
+                onChange={handleChange}
+                className="px-3 py-3 rounded bg-slate-100 border border-transparent"
+                required
+              />
             </div>
 
+            {/* Email */}
             <div className="mb-3">
-              <input type="email" name="email" placeholder="Enter your email" className="w-full px-3 py-3 rounded bg-slate-100 border border-transparent" onChange={handleChange} required />
+              <input
+                type="email"
+                name="email"
+                placeholder="Enter your email"
+                value={form.email || ""}
+                onChange={handleChange}
+                className="w-full px-3 py-3 rounded bg-slate-100 border border-transparent"
+                required
+              />
             </div>
 
+            {/* Phone */}
             <div className="grid grid-cols-3 gap-3 mb-3">
-              <select name="countryCode" value={form.countryCode || defaultCountryIso} onChange={handleChange} className="col-span-1 px-3 py-3 rounded bg-slate-100 border border-transparent">
+              <select
+                name="countryCode"
+                value={form.countryCode || defaultCountryIso}
+                onChange={handleChange}
+                className="col-span-1 px-3 py-3 rounded bg-slate-100 border border-transparent"
+              >
                 {countries.length === 0 ? (
                   <option value="IN">IN +91</option>
                 ) : (
                   countries.map((c) => (
-                    <option key={c.iso2} value={(c.iso2 || "").toUpperCase()}>
+                    <option
+                      key={c.iso2}
+                      value={(c.iso2 || "").toUpperCase()}
+                    >
                       {c.name} {c.dialCode}
                     </option>
                   ))
                 )}
               </select>
-
               <input
                 type="tel"
                 name="phone"
@@ -280,17 +340,41 @@ const SignInSignUp = () => {
               />
             </div>
 
+            {/* Passwords */}
             <div className="grid grid-cols-2 gap-3 mb-4">
-              <input type="password" name="password" placeholder="Password" className="w-full px-3 py-3 rounded bg-slate-100 border border-transparent" onChange={handleChange} required />
-              <input type="password" name="confirmPassword" placeholder="Confirm Password" className="w-full px-3 py-3 rounded bg-slate-100 border border-transparent" onChange={handleChange} required />
+              <input
+                type="password"
+                name="password"
+                placeholder="Password"
+                value={form.password || ""}
+                onChange={handleChange}
+                className="w-full px-3 py-3 rounded bg-slate-100 border border-transparent"
+                required
+              />
+              <input
+                type="password"
+                name="confirmPassword"
+                placeholder="Confirm Password"
+                value={form.confirmPassword || ""}
+                onChange={handleChange}
+                className="w-full px-3 py-3 rounded bg-slate-100 border border-transparent"
+                required
+              />
             </div>
 
             <div className="text-center mb-3">
-              <button type="submit" disabled={loading} className={`inline-block px-8 py-3 rounded-lg font-medium ${loading ? "bg-emerald-300 text-white" : "bg-emerald-600 text-white hover:bg-emerald-500"}`}>
+              <button
+                type="submit"
+                disabled={loading}
+                className={`inline-block px-8 py-3 rounded-lg font-medium ${
+                  loading
+                    ? "bg-emerald-300 text-white"
+                    : "bg-emerald-600 text-white hover:bg-emerald-500"
+                }`}
+              >
                 {loading ? "Creating..." : "Create an account"}
               </button>
             </div>
-
             {error && <p className="text-red-500 mt-3 text-sm">{error}</p>}
           </form>
         )}
