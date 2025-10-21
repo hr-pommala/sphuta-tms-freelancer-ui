@@ -43,7 +43,9 @@ const parseError = (err) => {
 export const signup = async (form) => {
   try {
     const res = await api.post("/auth/signup", form);
-    return { success: true, data: res.data };
+    // backend wraps responses in TmsApiResponse ({ success,statusCode,message,data })
+    const payload = res.data?.data ?? res.data;
+    return { success: true, data: payload };
   } catch (err) {
     return parseError(err);
   }
@@ -52,11 +54,18 @@ export const signup = async (form) => {
 export const login = async (emailOrUsername, password) => {
   try {
     const res = await api.post("/auth/login", { emailOrUsername, password });
-    const payload = res.data;
+    // backend returns a wrapped TmsApiResponse -> unwrap if present
+    const wrapper = res.data;
+    const payload = wrapper?.data ?? wrapper;
 
     if (payload?.token) {
-      // store header (payload.token might already be raw token)
-      const header = `${payload.tokenType ?? "Bearer"} ${payload.token}`;
+      // store header (payload.token might already be raw token or already prefixed)
+      let header;
+      if (typeof payload.token === "string" && payload.token.startsWith("Bearer ")) {
+        header = payload.token;
+      } else {
+        header = `${payload.tokenType ?? "Bearer"} ${payload.token}`;
+      }
       localStorage.setItem("token", header);
 
       // Try to find an id in multiple possible shapes returned by backend
@@ -85,7 +94,9 @@ export const login = async (emailOrUsername, password) => {
 export const forgotPassword = async (email) => {
   try {
     const res = await api.post("/auth/forgot", { email });
-    return { success: true, message: res.data?.message || "If email exists a reset link was sent" };
+    const wrapper = res.data;
+    const message = wrapper?.message ?? (res.data && res.data.message) ?? res.data;
+    return { success: true, message: message || "If email exists a reset link was sent" };
   } catch (err) {
     return parseError(err);
   }
@@ -94,7 +105,9 @@ export const forgotPassword = async (email) => {
 export const resetPassword = async (email, newPassword, confirmPassword) => {
   try {
     const res = await api.post("/auth/reset", { email, newPassword, confirmPassword });
-    return { success: true, message: res.data?.message || "Password updated" };
+    const wrapper = res.data;
+    const message = wrapper?.message ?? (res.data && res.data.message) ?? res.data;
+    return { success: true, message: message || "Password updated" };
   } catch (err) {
     return parseError(err);
   }
@@ -103,8 +116,9 @@ export const resetPassword = async (email, newPassword, confirmPassword) => {
 export const getMe = async () => {
   try {
     const res = await api.get("/auth/me");
+    const payload = res.data?.data ?? res.data;
     // Expecting response data to be user object or { id, fullName, email }
-    return { success: true, data: res.data };
+    return { success: true, data: payload };
   } catch (err) {
     return parseError(err);
   }
@@ -114,7 +128,8 @@ export const getMe = async () => {
 export const logoutRequest = async () => {
   try {
     const res = await api.post("/auth/logout");
-    return { success: true, data: res.data };
+    const payload = res.data?.data ?? res.data;
+    return { success: true, data: payload };
   } catch (err) {
     return parseError(err);
   }

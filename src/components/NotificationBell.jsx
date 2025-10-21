@@ -28,19 +28,33 @@ const NotificationBell = () => {
   const [emailNotif, setEmailNotif] = useState(true);
   const [pushNotif, setPushNotif] = useState(true);
   const [soundNotif, setSoundNotif] = useState(false);
-  const userId = JSON.parse(localStorage.getItem("user")).id;
 
   useEffect(() => {
     const loadNotifications = async () => {
       try {
-        const data = await fetchNotifications(userId);
+        // Safely read user id from localStorage; bail out when not present
+        let uid = null;
+        try {
+          const stored = localStorage.getItem("user");
+          uid = stored ? (JSON.parse(stored)?.id ?? null) : null;
+        } catch (err) {
+          console.warn("Could not parse user from localStorage", err);
+          uid = null;
+        }
+
+        if (!uid) {
+          // No user signed in — skip loading notifications
+          return;
+        }
+
+        const data = await fetchNotifications(uid);
         // Map backend response into UI-friendly format
-        const mapped = data.map((n) => ({
-          id: n.id,
-          title: n.title,
-          message: n.notification_description,
-          time: new Date(n.createdAt || Date.now()).toLocaleString(),
-          read: n.is_read,
+        const mapped = data.map((n, idx) => ({
+          id: n?.id ?? `tmp-${idx}`,
+          title: n?.title ?? "(No title)",
+          message: n?.notification_description ?? "",
+          time: new Date(n?.createdAt || Date.now()).toLocaleString(),
+          read: Boolean(n?.is_read),
           icon: <CheckCircleIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />,
         }));
         setNotifications(mapped);
@@ -49,11 +63,12 @@ const NotificationBell = () => {
       }
     };
     loadNotifications();
-  }, [userId]);
+  }, []); // don't depend on a value that might be null
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   const handleMarkAsRead = async (id) => {
+    if (!id) return; // guard: nothing to do if id is falsy
     try {
       await markNotificationAsRead(id);
       setNotifications((prev) =>
