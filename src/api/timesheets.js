@@ -105,15 +105,11 @@ export async function getOrCreateTimesheet(projectId, periodStart, periodEnd) {
    ----------------------- */
 
 export async function listEntries() {
-  // try common paths with sensible fallbacks
+  // prefer the dedicated time-entries endpoint; fallback to legacy /entries
   try {
-    return await api.get("/timesheets/entries");
+    return await api.get("/time-entries");
   } catch (e) {
-    try {
-      return await api.get("/time-entries");
-    } catch (e2) {
-      return api.get("/entries");
-    }
+    return api.get("/entries");
   }
 }
 
