@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import invoicingApi from "../../api/Settingsinvoicing";
+import AlertModal from "../../components/ui/AlertModal";
 
 export default function SettingsInvoicingList() {
   const [items, setItems] = useState([]);
@@ -8,6 +9,8 @@ export default function SettingsInvoicingList() {
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState("");
   const navigate = useNavigate();
+
+  const [alertState, setAlertState] = useState({ open: false, title: "", message: "", onClose: null });
 
   // Confirm modal state
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -52,12 +55,12 @@ export default function SettingsInvoicingList() {
       setItems((prev) => prev.filter(i => Number(i.userId) !== Number(toDeleteUserId)));
 
       // user-visible alert after successful delete (application-specific message)
-      window.alert(`Settings Invoicing for user ${toDeleteUserId} deleted`);
+      setAlertState({ open: true, title: "Deleted", message: `Settings Invoicing for user ${toDeleteUserId} deleted`, onClose: null });
 
     } catch (err) {
       console.error("delete error (Settings Invoicing):", err);
       const backendMsg = err?.response?.data?.message ?? err?.message ?? "Unknown error";
-      window.alert(`Failed to delete Settings Invoicing for user ${toDeleteUserId}: ${backendMsg}`);
+      setAlertState({ open: true, title: "Error", message: `Failed to delete Settings Invoicing for user ${toDeleteUserId}: ${backendMsg}`, onClose: null });
     } finally {
       setDeleteLoading(false);
       setConfirmOpen(false);
@@ -177,6 +180,7 @@ export default function SettingsInvoicingList() {
         }}
         loading={deleteLoading}
       />
+      <AlertModal open={alertState.open} title={alertState.title} message={alertState.message} onClose={() => { const cb = alertState.onClose; setAlertState({ open: false, title: "", message: "", onClose: null }); if (typeof cb === 'function') cb(); }} />
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { Button } from "./ui/button";
 import timesheetsApi from "../../api/timesheets";
 import api from "../../api/axios";
 import tasksApi from "../../api/tasksApi";
+import AlertModal from "../../components/ui/AlertModal";
 
 /* -------------------------
    Helpers (unchanged, small tweaks)
@@ -194,6 +195,9 @@ export default function TimeEntryPage() {
 
   // modal state for submission confirmation
   const [showSubmitModal, setShowSubmitModal] = useState(false);
+
+  // alert modal state
+  const [alertState, setAlertState] = useState({ open: false, message: "", type: "info" });
 
   // load clients once (kept but Client dropdown removed from UI)
   useEffect(() => {
@@ -522,7 +526,7 @@ export default function TimeEntryPage() {
     const d = new Date(dateKey);
     const monthKey = monthKeyFromDate(d);
     if (submittedMonthKeys.includes(monthKey)) {
-      alert("You already submitted hours for this month — you don't have access to update.");
+      setAlertState({ open: true, message: "You already submitted hours for this month — you don't have access to update.", type: "info" });
       return;
     }
 
@@ -564,7 +568,7 @@ export default function TimeEntryPage() {
 
   function setMonthlyValue(projectId, dayNumber, hours) {
     if (submittedMonthKeys.includes(currentMonthKey)) {
-      alert("You already submitted hours for this month — you don't have access to update.");
+      setAlertState({ open: true, message: "You already submitted hours for this month — you don't have access to update.", type: "info" });
       return;
     }
     const normalized = normalizeHourInput(hours);
@@ -601,13 +605,13 @@ export default function TimeEntryPage() {
   async function saveWeekToBackend() {
     const blocked = weekDates.some(d => submittedMonthKeys.includes(monthKeyFromDate(d)));
     if (blocked) {
-      alert("One or more days in this week fall in a submitted month.");
+      setAlertState({ open: true, message: "One or more days in this week fall in a submitted month.", type: "info" });
       return;
     }
 
     const pid = selectedWeeklyProjectId;
     if (!pid) {
-      alert("Please select a project to save.");
+      setAlertState({ open: true, message: "Please select a project to save.", type: "info" });
       return;
     }
 
@@ -617,7 +621,7 @@ export default function TimeEntryPage() {
       return Boolean(validationErrors[dailyKey]);
     });
     if (dayOverLimit) {
-      alert("Please fix validation errors (daily totals must not exceed 24h).");
+      setAlertState({ open: true, message: "Please fix validation errors (daily totals must not exceed 24h).", type: "info" });
       return;
     }
 
@@ -625,7 +629,7 @@ export default function TimeEntryPage() {
     try {
       const p = projects.find(pp => String(pp.id) === String(pid));
       if (!p) {
-        alert("Selected project not found.");
+        setAlertState({ open: true, message: "Selected project not found.", type: "info" });
         setSaving(false);
         return;
       }
@@ -654,7 +658,7 @@ export default function TimeEntryPage() {
       }
 
       if (entries.length === 0) {
-        alert("No hours to save for the selected project.");
+        setAlertState({ open: true, message: "No hours to save for the selected project.", type: "info" });
         setSaving(false);
         return;
       }
@@ -666,7 +670,7 @@ export default function TimeEntryPage() {
       const timesheetRes = await timesheetsApi.getOrCreateTimesheet(pid, periodStart, periodEnd);
       const timesheet = normalizeAxiosData(timesheetRes) ?? timesheetRes;
       const tsObj = timesheet?.data ?? timesheet ?? timesheetRes;
-      const tsId = tsObj?.id ?? tsObj?.timesheetId ?? tsObj?.timesheet_id ?? tsObj;
+      const tsId = tsObj?.id ?? tsObj?.timesheetId ?? tsObj?.timesheet_id ?? tsId;
 
       if (!tsId) throw new Error("No timesheet id");
 
@@ -697,11 +701,11 @@ export default function TimeEntryPage() {
       // After saving, refresh authoritative entries from the backend to avoid local double-counting
       await refreshEntriesForProjectPeriod(pid, periodStart, periodEnd);
 
-      alert("Saved");
+      setAlertState({ open: true, message: "Saved", type: "success" });
       window.dispatchEvent(new Event("timeEntryCreated"));
     } catch (err) {
       console.error("Failed to save weekly entries:", err, err?.response?.status, err?.response?.data);
-      alert("Failed to save — see console.");
+      setAlertState({ open: true, message: "Failed to save — see console.", type: "error" });
     } finally {
       setSaving(false);
     }
@@ -712,19 +716,19 @@ export default function TimeEntryPage() {
     const { silent } = options;
 
     if (submittedMonthKeys.includes(currentMonthKey)) {
-      if (!silent) alert("You already submitted hours for this month.");
+      if (!silent) setAlertState({ open: true, message: "You already submitted hours for this month.", type: "info" });
       return false;
     }
 
     const pid = monthlySelectedProjectId;
     if (!pid) {
-      if (!silent) alert("Please select a project to save.");
+      if (!silent) setAlertState({ open: true, message: "Please select a project to save.", type: "info" });
       return false;
     }
 
     const monthInvalid = Object.keys(validationErrors).find(k => k.startsWith(`D|M|${pid}|`));
     if (monthInvalid) {
-      if (!silent) alert("Please fix validation errors before saving (daily totals must not exceed 24h).");
+      if (!silent) setAlertState({ open: true, message: "Please fix validation errors before saving (daily totals must not exceed 24h).", type: "info" });
       return false;
     }
 
@@ -732,7 +736,7 @@ export default function TimeEntryPage() {
     try {
       const p = projects.find(pp => String(pp.id) === String(pid));
       if (!p) {
-        if (!silent) alert("Selected project not found.");
+        if (!silent) setAlertState({ open: true, message: "Selected project not found.", type: "info" });
         setSaving(false);
         return false;
       }
@@ -763,7 +767,7 @@ export default function TimeEntryPage() {
       }
 
       if (entries.length === 0) {
-        if (!silent) alert("No hours to save for the selected project.");
+        if (!silent) setAlertState({ open: true, message: "No hours to save for the selected project.", type: "info" });
         setSaving(false);
         return false;
       }
@@ -771,7 +775,7 @@ export default function TimeEntryPage() {
       const timesheetRes = await timesheetsApi.getOrCreateTimesheet(pid, periodStart, periodEnd);
       const timesheet = normalizeAxiosData(timesheetRes) ?? timesheetRes;
       const tsObj = timesheet?.data ?? timesheet ?? timesheetRes;
-      const tsId = tsObj?.id ?? tsObj?.timesheetId ?? tsObj?.timesheet_id ?? tsObj;
+      const tsId = tsObj?.id ?? tsObj?.timesheetId ?? tsObj?.timesheet_id ?? tsId;
 
       if (!tsId) throw new Error("No timesheet id");
 
@@ -800,12 +804,12 @@ export default function TimeEntryPage() {
       // After saving, refresh authoritative entries from backend (prevents double increments)
       await refreshEntriesForProjectPeriod(pid, periodStart, periodEnd);
 
-      if (!silent) alert("Saved");
+      if (!silent) setAlertState({ open: true, message: "Saved", type: "success" });
       window.dispatchEvent(new Event("timeEntryCreated"));
       return true;
     } catch (err) {
       console.error("Failed to save monthly entries:", err, err?.response?.status, err?.response?.data);
-      if (!silent) alert("Failed to save — see console.");
+      if (!silent) setAlertState({ open: true, message: "Failed to save — see console.", type: "error" });
       return false;
     } finally {
       setSaving(false);
@@ -814,7 +818,7 @@ export default function TimeEntryPage() {
 
   async function submitMonthToBackend() {
     if (submittedMonthKeys.includes(currentMonthKey)) {
-      alert("You already submitted this month.");
+      setAlertState({ open: true, message: "You already submitted this month.", type: "info" });
       return;
     }
 
@@ -822,7 +826,7 @@ export default function TimeEntryPage() {
     try {
       const ok = await saveMonthToBackend({ silent: true });
       if (!ok) {
-        alert("Failed to save prior to submit — see console.");
+        setAlertState({ open: true, message: "Failed to save prior to submit — see console.", type: "error" });
         return;
       }
 
@@ -831,11 +835,11 @@ export default function TimeEntryPage() {
         return [...prev, currentMonthKey];
       });
 
-      alert("Submitted");
+      setAlertState({ open: true, message: "Submitted", type: "success" });
       window.dispatchEvent(new Event("timeEntryCreated"));
     } catch (err) {
       console.error("Failed to submit month:", err, err?.response?.status, err?.response?.data);
-      alert("Failed to submit — see console.");
+      setAlertState({ open: true, message: "Failed to submit — see console.", type: "error" });
     } finally {
       setSaving(false);
       setShowSubmitModal(false);
@@ -1259,6 +1263,17 @@ export default function TimeEntryPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Alert modal */}
+      {alertState.open && (
+        <AlertModal
+          open={alertState.open}
+          onClose={() => setAlertState(prev => ({ ...prev, open: false }))}
+          title={alertState.type === "error" ? "Error" : "Notice"}
+          message={alertState.message}
+          type={alertState.type}
+        />
       )}
     </div>
   );

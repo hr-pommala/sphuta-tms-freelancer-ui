@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import preferencesApi from "../../api/preferencesApi";
 import { useNavigate } from "react-router-dom";
+import AlertModal from "../../components/ui/AlertModal";
 
 /**
  * ConfirmModal
@@ -53,6 +54,8 @@ const PreferenceList = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  const [alertState, setAlertState] = useState({ open: false, title: "", message: "", onClose: null });
+
   // modal state
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [toDeleteUserId, setToDeleteUserId] = useState(null);
@@ -89,7 +92,7 @@ const PreferenceList = () => {
     } catch (err) {
       console.error("Failed to load preferences", err);
       // keep behavior: show alert on failure
-      alert("Failed to load preferences.");
+      setAlertState({ open: true, title: "Error", message: "Failed to load preferences.", onClose: null });
       setPrefs([]);
     } finally {
       setLoading(false);
@@ -109,7 +112,7 @@ const PreferenceList = () => {
   // called when the user clicks Delete button in the table
   const onDeleteClicked = (userId) => {
     if (userId == null) {
-      alert("Missing userId for deletion.");
+      setAlertState({ open: true, title: "Error", message: "Missing userId for deletion.", onClose: null });
       return;
     }
     // open modal instead of window.confirm
@@ -124,12 +127,12 @@ const PreferenceList = () => {
     try {
       await preferencesApi.remove(Number(toDeleteUserId));
       // keep original behavior: show alert on success
-      alert("Preference deleted successfully.");
+      setAlertState({ open: true, title: "Deleted", message: "Preference deleted successfully.", onClose: null });
       setPrefs((p) => p.filter((x) => x.userId !== toDeleteUserId));
     } catch (err) {
       console.error("Delete failed", err);
       const msg = err?.response?.data?.message ?? err?.message ?? "Failed to delete preference.";
-      alert(msg);
+      setAlertState({ open: true, title: "Error", message: String(msg), onClose: null });
     } finally {
       setDeleteLoading(false);
       setConfirmOpen(false);
@@ -138,6 +141,9 @@ const PreferenceList = () => {
   };
 
   return (
+    <>
+      <AlertModal open={alertState.open} title={alertState.title} message={alertState.message} onClose={() => { const cb = alertState.onClose; setAlertState({ open: false, title: "", message: "", onClose: null }); if (typeof cb === 'function') cb(); }} />
+
     <div>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold">Preference List</h2>
@@ -215,6 +221,7 @@ const PreferenceList = () => {
         loading={deleteLoading}
       />
     </div>
+    </>
   );
 };
 

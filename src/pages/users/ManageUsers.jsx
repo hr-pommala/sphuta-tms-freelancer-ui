@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { listUsers, deleteUser } from "../../api/users";
+import AlertModal from "../../components/ui/AlertModal";
 
 export default function ManageUsers() {
   const [rows, setRows] = useState([]);
@@ -13,6 +14,8 @@ export default function ManageUsers() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [toDeleteUserId, setToDeleteUserId] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  // Alert modal state: { open, title, message, onClose }
+  const [alertState, setAlertState] = useState({ open: false, title: "", message: "", onClose: null });
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -77,8 +80,7 @@ export default function ManageUsers() {
 
       // show banner + alert per your request
       setBanner({ type: "success", text: "User deleted successfully." });
-      // requested alert message after delete
-      window.alert(`${toDeleteUserId} profile deleted`);
+      setAlertState({ open: true, title: "User deleted", message: `${toDeleteUserId} profile deleted`, onClose: null });
     } catch (err) {
       const status = err?.response?.status;
       const backend = err?.response?.data?.message || err?.message || "Unknown error";
@@ -87,8 +89,7 @@ export default function ManageUsers() {
         text: `Failed to delete user. ${status ? `Status ${status}. ` : ""}${backend}`,
       });
       console.error("DELETE failed:", err);
-      // also surface an alert on failure
-      window.alert(`Delete failed: ${backend}`);
+      setAlertState({ open: true, title: "Delete failed", message: `Delete failed: ${backend}`, onClose: null });
     } finally {
       setDeleteLoading(false);
       setConfirmOpen(false);
@@ -147,6 +148,17 @@ export default function ManageUsers() {
 
   return (
     <div className="p-4 sm:p-6">
+      <AlertModal
+        open={alertState.open}
+        title={alertState.title}
+        message={alertState.message}
+        onClose={() => {
+          const cb = alertState.onClose;
+          setAlertState({ open: false, title: "", message: "", onClose: null });
+          if (typeof cb === "function") cb();
+        }}
+      />
+
       <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
         <h1 className="text-2xl font-semibold">Manage Users</h1>
         <div className="flex gap-2">

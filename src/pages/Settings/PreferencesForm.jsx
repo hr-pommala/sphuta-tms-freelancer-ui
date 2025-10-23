@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import preferencesApi from "../../api/preferencesApi";
 import { useNavigate, useParams } from "react-router-dom";
+import AlertModal from "../../components/ui/AlertModal";
 
 const WEEK_OPTIONS = ["MON", "SUN"];
 const ROUNDING_OPTIONS = ["NONE", "NEAREST_15", "NEAREST_30"];
@@ -20,6 +21,7 @@ const PreferenceForm = () => {
   });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [alertState, setAlertState] = useState({ open: false, title: "", message: "", onClose: null });
 
   const normalize = (raw) => ({
     userId: raw.userId ?? raw.user_id ?? null,
@@ -49,8 +51,7 @@ const PreferenceForm = () => {
       const res = await preferencesApi.getById(id);
       const raw = res?.data?.data ?? res?.data ?? null;
       if (!raw) {
-        alert("Preference not found");
-        navigate("/settings/preferences");
+        setAlertState({ open: true, title: "Not found", message: "Preference not found", onClose: () => navigate("/settings/preferences") });
         return;
       }
       const payload = normalize(raw);
@@ -62,8 +63,7 @@ const PreferenceForm = () => {
       });
     } catch (err) {
       console.error("Failed to load preference", err);
-      alert("Failed to load preference.");
-      navigate("/settings/preferences");
+      setAlertState({ open: true, title: "Error", message: "Failed to load preference.", onClose: () => navigate("/settings/preferences") });
     } finally {
       setLoading(false);
     }
@@ -71,19 +71,19 @@ const PreferenceForm = () => {
 
   const validate = () => {
     if (form.userId === null || isNaN(form.userId)) {
-      alert("UserId (integer) is required.");
+      setAlertState({ open: true, title: "Validation", message: "UserId (integer) is required.", onClose: null });
       return false;
     }
     if (form.dateFormat !== "YYYY-MM-DD") {
-      alert("Date format must be exactly 'YYYY-MM-DD'.");
+      setAlertState({ open: true, title: "Validation", message: "Date format must be exactly 'YYYY-MM-DD'.", onClose: null });
       return false;
     }
     if (!WEEK_OPTIONS.includes(form.weekStartsOn)) {
-      alert("Week Starts On must be one of: " + WEEK_OPTIONS.join(", "));
+      setAlertState({ open: true, title: "Validation", message: "Week Starts On must be one of: " + WEEK_OPTIONS.join(", "), onClose: null });
       return false;
     }
     if (!ROUNDING_OPTIONS.includes(form.rounding)) {
-      alert("Rounding must be a known option.");
+      setAlertState({ open: true, title: "Validation", message: "Rounding must be a known option.", onClose: null });
       return false;
     }
     return true;
@@ -115,17 +115,16 @@ const PreferenceForm = () => {
 
       if (isEdit) {
         await preferencesApi.update(form.userId, payload);
-        alert("Preferences updated successfully.");
+        setAlertState({ open: true, title: "Saved", message: "Preferences updated successfully.", onClose: () => navigate("/settings/preferences") });
       } else {
         await preferencesApi.create(payload);
-        alert("Preferences created successfully.");
+        setAlertState({ open: true, title: "Created", message: "Preferences created successfully.", onClose: () => navigate("/settings/preferences") });
       }
 
-      navigate("/settings/preferences");
     } catch (err) {
       console.error("Save failed", err);
       const message = err?.response?.data?.message ?? err?.message ?? "Save failed";
-      alert("Error: " + message);
+      setAlertState({ open: true, title: "Error", message: "Error: " + message, onClose: null });
     } finally {
       setSaving(false);
     }
@@ -134,6 +133,9 @@ const PreferenceForm = () => {
   if (loading) return <div>Loading preference...</div>;
 
   return (
+    <>
+      <AlertModal open={alertState.open} title={alertState.title} message={alertState.message} onClose={() => { const cb = alertState.onClose; setAlertState({ open: false, title: "", message: "", onClose: null }); if (typeof cb === 'function') cb(); }} />
+
     <form onSubmit={onSave} className="space-y-4 max-w-xl">
       <div>
         <label className="block text-sm font-medium mb-1">User ID</label>
@@ -200,6 +202,7 @@ const PreferenceForm = () => {
         </button>
       </div>
     </form>
+    </>
   );
 };
 

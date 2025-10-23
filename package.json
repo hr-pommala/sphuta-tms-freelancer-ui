@@ -21,6 +21,7 @@
     "axios": "1.12.2",
     "caniuse-lite": "^1.0.30001741",
     "country-telephone-data": "^0.6.3",
+    "country-state-city": "^3.0.0",
     "crypto-js": "4.2.0",
     "currency-codes": "^2.2.0",
     "dayjs": "^1.11.13",

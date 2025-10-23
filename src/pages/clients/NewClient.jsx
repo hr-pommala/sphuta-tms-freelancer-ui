@@ -2,33 +2,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import api from "../../api/axios"; // <-- use central api instance
 import { useNavigate, useParams } from "react-router-dom";
+import { Country, State, City } from "country-state-city/lib/index.js";
 
 const API_BASE = `${import.meta.env.VITE_API_BASE}/clients`;
 const USERS_API_PATH = "/users"; // call via `api`, not absolute URL
-
-/** Cascading: state → city → ZIP */
-const STATES = [
-  { code: "TX", label: "Texas" },
-  { code: "CA", label: "California" },
-  { code: "NY", label: "New York" },
-];
-const CITIES_BY_STATE = {
-  TX: ["Austin", "Dallas", "Houston"],
-  CA: ["Los Angeles", "San Francisco", "San Diego"],
-  NY: ["New York City", "Buffalo", "Rochester"],
-};
-const ZIPS_BY_CITY = {
-  Austin: ["78701", "78702", "78703"],
-  Dallas: ["75201", "75202", "75203"],
-  Houston: ["77001", "77002", "77003", "77004"],
-  "Los Angeles": ["90001", "90002", "90003"],
-  "San Francisco": ["94101", "94102", "94103"],
-  "San Diego": ["92101", "92102", "92103"],
-  "New York City": ["10001", "10002", "10003"],
-  Buffalo: ["14201", "14202", "14203"],
-  Rochester: ["14602", "14604", "14605"],
-};
-
 
 const LANGUAGES = [
   { code: "en", label: "English" },
@@ -71,7 +48,8 @@ const sanitizePayload = (data) => {
     city: trim(data.city) || null,
     state: trim(data.state) || null,
     postalCode: trim(data.postalCode) || null,
-    countryCode: "US",
+    // use ISO2 country code (e.g., 'US')
+    countryCode: (data.countryCode || "US").toUpperCase(),
 
     sendReminders: !!data.sendReminders,
     chargeLateFees: !!data.chargeLateFees,
@@ -107,6 +85,8 @@ const NewClient = () => {
     city: "",
     state: "",
     postalCode: "",
+    // store ISO2 country code
+    countryCode: "US",
     sendReminders: false,
     chargeLateFees: false,
     lateFeePercent: null,
@@ -203,10 +183,22 @@ const NewClient = () => {
         l = parts.pop() || "";
         f = parts.join(" ");
       }
-      const stateCode =
-        dto.state && dto.state.length === 2
-          ? dto.state
-          : (STATES.find((s) => s.label === dto.state)?.code || "");
+
+      // try to derive ISO2 state/country when possible
+      const countryIso = (dto.countryCode || "US").toUpperCase();
+
+      // if dto.state looks like an ISO code use it, otherwise attempt to map by name
+      let stateCode = dto.state || "";
+      try {
+        const statesForCountry = State.getStatesOfCountry(countryIso) || [];
+        const found = statesForCountry.find(
+          (s) => (s.isoCode && s.isoCode.toUpperCase() === (dto.state || "").toUpperCase()) ||
+                 (s.name && s.name.toLowerCase() === (dto.state || "").toLowerCase())
+        );
+        if (found) stateCode = found.isoCode;
+      } catch (e) {
+        // ignore
+      }
 
       const filled = {
         userId: dto.userId ?? null, // <-- prefill userId if provided by DTO
@@ -221,6 +213,7 @@ const NewClient = () => {
         city: dto.city || "",
         state: stateCode || "",
         postalCode: dto.postalCode || "",
+        countryCode: (countryIso || "US").toUpperCase(),
         sendReminders: !!dto.sendReminders,
         chargeLateFees: !!dto.chargeLateFees,
         lateFeePercent: dto.lateFeePercent ?? null,
@@ -264,9 +257,25 @@ const NewClient = () => {
     };
   }, [isEdit, editId]);
 
-  // cascading options
-  const cities = useMemo(() => (formData.state ? CITIES_BY_STATE[formData.state] || [] : []), [formData.state]);
-  const zips = useMemo(() => (formData.city ? ZIPS_BY_CITY[formData.city] || [] : []), [formData.city]);
+  // dynamic options via country-state-city
+  const countries = useMemo(() => Country.getAllCountries() || [], []);
+  const states = useMemo(() => {
+    if (!formData.countryCode) return [];
+    try {
+      return State.getStatesOfCountry((formData.countryCode || "").toUpperCase()) || [];
+    } catch (e) {
+      return [];
+    }
+  }, [formData.countryCode]);
+
+  const cities = useMemo(() => {
+    if (!formData.countryCode || !formData.state) return [];
+    try {
+      return City.getCitiesOfState((formData.countryCode || "").toUpperCase(), formData.state) || [];
+    } catch (e) {
+      return [];
+    }
+  }, [formData.countryCode, formData.state]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -274,6 +283,11 @@ const NewClient = () => {
     if (name === "lateFeePercent") {
       setFormData((p) => ({ ...p, lateFeePercent: value === "" ? null : Number(value) }));
       setErrors((prev) => ({ ...prev, lateFeePercent: undefined }));
+      return;
+    }
+    if (name === "countryCode") {
+      setFormData((p) => ({ ...p, countryCode: (value || "").toUpperCase(), state: "", city: "", postalCode: "" }));
+      setErrors((prev) => ({ ...prev, countryCode: undefined }));
       return;
     }
     if (name === "state") {
@@ -341,6 +355,7 @@ const NewClient = () => {
     if (formData.businessPhone && !phoneRegex.test(formData.businessPhone))
       errs.businessPhone = "Phone must be E.164-like";
 
+    if (!formData.countryCode?.trim()) errs.countryCode = "Country required";
     if (!formData.state?.trim()) errs.state = "State required";
     if (!formData.city?.trim()) errs.city = "City required";
     if (!formData.postalCode?.trim()) errs.postalCode = "ZIP required";
@@ -594,12 +609,23 @@ const NewClient = () => {
               <input name="addressLine2" placeholder="Address Line 2" value={formData.addressLine2} onChange={handleChange} className="p-2 border rounded w-full" />
             </div>
 
-            {/* Cascading selects */}
+            {/* Cascading selects: Country -> State -> City */}
+            <div>
+              <label className="block text-sm font-medium mb-1">Country *</label>
+              <select name="countryCode" value={formData.countryCode || ""} onChange={handleChange} className={`p-2 border rounded w-full ${errors.countryCode ? "border-red-500" : ""}`}>
+                <option value="">Select Country</option>
+                {countries.map((c) => (
+                  <option key={c.isoCode} value={(c.isoCode || "").toUpperCase()}>{c.name}</option>
+                ))}
+              </select>
+              {errors.countryCode && <p className="text-xs text-red-600 mt-1">{errors.countryCode}</p>}
+            </div>
+
             <div>
               <label className="block text-sm font-medium mb-1">State *</label>
-              <select name="state" value={formData.state} onChange={handleChange} className={`p-2 border rounded w-full ${errors.state ? "border-red-500" : ""}`}>
-                <option value="">Select State</option>
-                {STATES.map((s) => <option key={s.code} value={s.code}>{s.label}</option>)}
+              <select name="state" value={formData.state} onChange={handleChange} disabled={!formData.countryCode} className={`p-2 border rounded w-full ${errors.state ? "border-red-500" : ""}`}>
+                <option value="">{formData.countryCode ? "Select State" : "Select country first"}</option>
+                {states.map((s) => <option key={s.isoCode} value={s.isoCode}>{s.name}</option>)}
               </select>
               {errors.state && <p className="text-xs text-red-600 mt-1">{errors.state}</p>}
             </div>
@@ -608,17 +634,14 @@ const NewClient = () => {
               <label className="block text-sm font-medium mb-1">City *</label>
               <select name="city" value={formData.city} onChange={handleChange} disabled={!formData.state} className={`p-2 border rounded w-full ${errors.city ? "border-red-500" : ""}`}>
                 <option value="">{formData.state ? "Select City" : "Select state first"}</option>
-                {cities.map((c) => <option key={c} value={c}>{c}</option>)}
+                {cities.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
               </select>
               {errors.city && <p className="text-xs text-red-600 mt-1">{errors.city}</p>}
             </div>
 
             <div>
               <label className="block text-sm font-medium mb-1">ZIP *</label>
-              <select name="postalCode" value={formData.postalCode} onChange={handleChange} disabled={!formData.city} className={`p-2 border rounded w-full ${errors.postalCode ? "border-red-500" : ""}`}>
-                <option value="">{formData.city ? "Select ZIP" : "Select city first"}</option>
-                {zips.map((z) => <option key={z} value={z}>{z}</option>)}
-              </select>
+              <input name="postalCode" placeholder="ZIP / Postal code" value={formData.postalCode} onChange={handleChange} className={`p-2 border rounded w-full ${errors.postalCode ? "border-red-500" : ""}`} />
               {errors.postalCode && <p className="text-xs text-red-600 mt-1">{errors.postalCode}</p>}
             </div>
 

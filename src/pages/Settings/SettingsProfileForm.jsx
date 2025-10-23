@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { createProfile, getProfile, updateProfile } from "../../api/settingsProfile";
+import AlertModal from "../../components/ui/AlertModal";
 
 const PHONE_REGEX = /^[+0-9\-\s]*$/;
 
@@ -19,6 +20,7 @@ const SettingsProfileForm = () => {
   });
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
+  const [alertState, setAlertState] = useState({ open: false, title: "", message: "", onClose: null });
 
   useEffect(() => {
     if (editing) loadProfile();
@@ -38,8 +40,7 @@ const SettingsProfileForm = () => {
       });
     } catch (err) {
       console.error("Failed to load profile", err);
-      window.alert("Failed to load profile");
-      navigate("/settings/profile");
+      setAlertState({ open: true, title: "Error", message: "Failed to load profile", onClose: () => navigate("/settings/profile") });
     }
   };
 
@@ -74,22 +75,33 @@ const SettingsProfileForm = () => {
 
       if (editing) {
         await updateProfile(id, payload);
-        window.alert("Profile updated");
+        setAlertState({ open: true, title: "Updated", message: "Profile updated", onClose: () => navigate("/settings/profile") });
       } else {
         await createProfile(payload);
-        window.alert("Profile created");
+        setAlertState({ open: true, title: "Created", message: "Profile created", onClose: () => navigate("/settings/profile") });
       }
-      navigate("/settings/profile");
     } catch (err) {
       console.error("Save failed", err);
       const msg = err?.response?.data?.message || err?.response?.data?.error || "Save failed";
-      window.alert(String(msg));
+      setAlertState({ open: true, title: "Error", message: String(msg), onClose: null });
     } finally {
       setSaving(false);
     }
   };
 
   return (
+    <>
+      <AlertModal
+        open={alertState.open}
+        title={alertState.title}
+        message={alertState.message}
+        onClose={() => {
+          const cb = alertState.onClose;
+          setAlertState({ open: false, title: "", message: "", onClose: null });
+          if (typeof cb === "function") cb();
+        }}
+      />
+
     <div className="p-6 max-w-3xl mx-auto">
       <h1 className="text-2xl font-semibold mb-4">{editing ? "Edit" : "New"} Settings Profile</h1>
       <form onSubmit={handleSubmit} className="space-y-4 bg-white p-6 rounded shadow">
@@ -172,6 +184,7 @@ const SettingsProfileForm = () => {
         </div>
       </form>
     </div>
+    </>
   );
 };
 

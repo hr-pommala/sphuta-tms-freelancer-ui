@@ -2,10 +2,13 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getTimesheet, updateTimesheet } from "../../api/timesheets";
+import AlertModal from "../../components/ui/AlertModal";
 
 const EditTimesheet = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+
+  const [alertState, setAlertState] = useState({ open: false, title: "", message: "", onClose: null });
 
   const [form, setForm] = useState({
     projectId: "",
@@ -30,8 +33,7 @@ const EditTimesheet = () => {
         });
       } catch (err) {
         console.error("Failed to load timesheet", err);
-        alert("Failed to load timesheet");
-        navigate("/timesheets");
+        setAlertState({ open: true, title: "Error", message: "Failed to load timesheet", onClose: () => navigate("/timesheets") });
       } finally {
         setLoading(false);
       }
@@ -66,8 +68,7 @@ const EditTimesheet = () => {
       console.debug("Update response:", serverBody);
 
       // success -> go back to list
-      alert("Timesheet updated");
-      navigate("/timesheets");
+      setAlertState({ open: true, title: "Updated", message: "Timesheet updated", onClose: () => navigate("/timesheets") });
     } catch (err) {
       // err can be an axios Error or our axios-interceptor error object
       console.error("Update failed (raw):", err);
@@ -93,6 +94,9 @@ const EditTimesheet = () => {
   if (loading) return <div className="p-6">Loading…</div>;
 
   return (
+    <>
+      <AlertModal open={alertState.open} title={alertState.title} message={alertState.message} onClose={() => { const cb = alertState.onClose; setAlertState({ open: false, title: "", message: "", onClose: null }); if (typeof cb === 'function') cb(); }} />
+
     <div className="p-6 max-w-lg mx-auto bg-white shadow rounded-lg">
       <h2 className="text-2xl font-bold mb-4">Edit Timesheet #{id}</h2>
 
@@ -149,6 +153,7 @@ const EditTimesheet = () => {
         </div>
       </form>
     </div>
+    </>
   );
 };
 

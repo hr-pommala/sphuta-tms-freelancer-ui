@@ -4,6 +4,7 @@ import { FaPlus, FaDownload, FaSlidersH, FaSearch } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import ExcelJS from "exceljs";
 import * as clientsApi from "../../api/clients"; // your lightweight clients API wrapper
+import AlertModal from "../../components/ui/AlertModal";
 
 /* ---------- static options ---------- */
 const FIELD_OPTIONS = [
@@ -98,6 +99,7 @@ export default function ListClients() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [toDeleteId, setToDeleteId] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [alertState, setAlertState] = useState({ open: false, title: "", message: "", onClose: null });
 
   // ---------- fetch clients ----------
   const fetchClients = async () => {
@@ -198,12 +200,11 @@ export default function ListClients() {
       pushToast({ kind: "success", text: `Deleted client id=${toDeleteId}` });
       // refresh the list
       await fetchClients();
-      // also show the requested alert message after delete
-      window.alert(`${toDeleteId} profile deleted`);
+      setAlertState({ open: true, title: "Deleted", message: `${toDeleteId} profile deleted`, onClose: null });
     } catch (err) {
       console.error("Delete failed:", err);
       pushToast({ kind: "error", text: err?.response?.data?.message || "Delete failed" });
-      window.alert("Delete failed. See console for details.");
+      setAlertState({ open: true, title: "Delete failed", message: "Delete failed. See console for details.", onClose: null });
       throw err;
     } finally {
       setDeleteLoading(false);
@@ -282,6 +283,16 @@ export default function ListClients() {
     setShowFilterPopup(false);
     pushToast({ kind: "success", text: "Exported clients" });
   };
+
+  // Alert modal rendering
+  const Alert = (
+    <AlertModal
+      open={alertState.open}
+      title={alertState.title}
+      message={alertState.message}
+      onClose={() => { const cb = alertState.onClose; setAlertState({ open: false, title: "", message: "", onClose: null }); if (typeof cb === 'function') cb(); }}
+    />
+  );
 
   /* ---------- select action handling ---------- */
   const handleAction = async (id, value) => {

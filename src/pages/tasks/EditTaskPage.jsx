@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import tasksApi from "../../api/tasksApi"; // ensure tasksApi exports get(id) and update(id,payload)
 import TaskForm from "./TaskForm";
+import AlertModal from "../../components/ui/AlertModal";
 
 export default function EditTaskPage() {
   const { id } = useParams();
@@ -11,6 +12,7 @@ export default function EditTaskPage() {
   const [task, setTask] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [alertState, setAlertState] = useState({ open: false, title: "", message: "", onClose: null });
 
   useEffect(() => {
     let mounted = true;
@@ -43,14 +45,14 @@ export default function EditTaskPage() {
       if (err?.response) {
         // server sent a response (status, body)
         console.error("Status:", err.response.status, "Data:", err.response.data);
-        alert(err.response?.data?.message || `Save failed (status ${err.response.status})`);
+        setAlertState({ open: true, title: "Save failed", message: (err.response?.data?.message) || `Save failed (status ${err.response.status})`, onClose: null });
       } else if (err?.request) {
         // request made but no response
         console.error("No response (request):", err.request);
-        alert("No response from server. Check network or server logs.");
+        setAlertState({ open: true, title: "No response", message: "No response from server. Check network or server logs.", onClose: null });
       } else {
         // something else
-        alert(err.message || "Failed to save");
+        setAlertState({ open: true, title: "Error", message: (err.message || "Failed to save"), onClose: null });
       }
     }
   }
@@ -62,6 +64,7 @@ export default function EditTaskPage() {
 
   return (
     <div className="p-4 sm:p-6 max-w-2xl mx-auto">
+      <AlertModal open={alertState.open} title={alertState.title} message={alertState.message} onClose={() => { const cb = alertState.onClose; setAlertState({ open: false, title: "", message: "", onClose: null }); if (typeof cb === 'function') cb(); }} />
       <div className="text-2xl font-bold mb-4">Edit Task</div>
       <TaskForm
         initial={task}
